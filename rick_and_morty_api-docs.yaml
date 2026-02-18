@@ -1,0 +1,119 @@
+resources:
+- name: characters
+  endpoint:
+    path: /api/character
+    method: GET
+- name: locations
+  endpoint:
+    path: /api/location
+    method: GET
+- name: episodes
+  endpoint:
+    path: /api/episode
+    method: GET
+- name: todos
+  endpoint:
+    path: /v2/todos
+    method: GET
+- name: request-archive-policy
+  endpoint:
+    path: /modules/archive-request-policy
+    method: PUT
+    data_selector: body
+    params: {}
+- name: customer_rate_limits
+  endpoint:
+    path: /customer_rate_limits
+    method: GET
+    data_selector: data
+    params: {}
+- name: monetization-with-bypass-inbound
+  endpoint:
+    path: /config/policies.json
+    method: POST
+    data_selector: policies
+- name: test_api_key
+  endpoint:
+    path: /services/createConsumer
+    method: POST
+    data_selector: consumer
+- name: graphql_query
+  endpoint:
+    path: /graphql
+    method: POST
+    data_selector: ''
+    params: {}
+- name: openapi_spec
+  endpoint:
+    path: /openapi
+    method: GET
+- name: OpenAPI Spec
+  endpoint:
+    path: /openapi
+    method: GET
+    data_selector: $text
+- name: hello
+  endpoint:
+    path: /hello
+    method: GET
+    data_selector: x-my-custom-config
+    params: {}
+- name: policies
+  endpoint:
+    path: /policies
+    method: GET
+    data_selector: policies
+    params: {}
+- name: JWT Auth Policy
+  endpoint:
+    path: /products/:123
+    method: POST
+- name: gets_a_provisioning_status
+  endpoint:
+    path: /v1/accounts/{accountName}/tunnels/{tunnelId}/provisioning-operations/{operationId}
+    method: GET
+- name: gets_a_service_configuration
+  endpoint:
+    path: /v1/accounts/{accountName}/tunnels/{tunnelId}/services-configuration
+    method: GET
+- name: configures_tunnel_services
+  endpoint:
+    path: /v1/accounts/{accountName}/tunnels/{tunnelId}/services-configuration
+    method: PUT
+notes:
+- We recommend updating the info properties in your OpenAPI file and include the version
+  as this will help your users disambiguate the version in your developer portal.
+- In the case of multiple policies, the setting must be false to prevent unauthenticated
+  requests.
+- Production customers should talk to a Zuplo representative to get help managing
+  their secure keys.
+- Processes in Zuplo typically have ~120MB of memory to perform all their work, including
+  holding request bodies etc.
+- Disable introspection in production environments to hide schema details.
+- You need to allow backstage to call Zuplo's domain to fetch the OpenAPI file.
+- You must add your Zuplo API to your Backstage Catalog by updating entities.yaml.
+- You may also use catalog-info.yaml for integration.
+- Zuplo supports making requests to non-standard ports when your runtime is configured
+  with a compatibility date of 2024-09-02 or later.
+- Before 2024-09-02, Zuplo didn't support making requests to non-standard ports.
+- Enable Application Connections toggle must be checked.
+- Create an Okta authorization server for MCP Server.
+- Set the audience to the canonical URL of your MCP Server.
+- Add scopes for the authorization server.
+- Create an OAuth client application for your MCP server.
+- 'Simplified Authentication: Implement API key authentication in minutes with zero
+  code'
+- 'Enhanced Security: Protect your APIs with robust key validation and management'
+- Works with any OpenID-compliant identity provider including Auth0, Okta, Azure AD,
+  and more
+- Defaults to false which means unauthenticated users will automatically receive a
+  401 response
+errors:
+- '401 - Unauthorized: Recheck API key validity'
+- '401 Unauthorized: Indicates that authentication has failed'
+auth_info:
+  mentioned_objects:
+  - ZuploRequest
+client:
+  base_url: https://rickandmorty.zuplo.io
+source_metadata: null

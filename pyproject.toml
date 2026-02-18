@@ -2,9 +2,9 @@
 name = "dlt-ai-dev-kit"
 version = "0.1.0"
 description = "Add your description here"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
-    "dlt[duckdb,rest-api,workspace]>=1.22.0",
+    "dlt[workspace]>=1.22.0",
     "numpy>=2.4.2",
     "pandas>=3.0.1",
 ]
