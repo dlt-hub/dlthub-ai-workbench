@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "dlt-pipeline-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "dlt", "pipeline", "rick_and_morty", "mcp", "--stdio"]
+    }
+  }
+}

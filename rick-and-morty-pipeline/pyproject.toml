@@ -1,0 +1,13 @@
+[project]
+name = "rick-and-morty-pipeline"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.14"
+dependencies = [
+    "dlt[duckdb,workspace]>=1.22.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
