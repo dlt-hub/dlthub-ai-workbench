@@ -1,0 +1,39 @@
+Based on the information provided in the documentation, here is a complete YAML configuration for the Luma Events REST API source:
+
+client:
+  base_url: "https://lu.ma/api/v1/"
+  auth:
+    type: "api_key"
+    location: "header"
+    header_name: "Authorization"
+
+resources:
+  - name: "events"
+    endpoint: "/events"
+    method: "GET"
+    params: {}
+    data_selector: "$"  # Selects all data from the response
+
+  - name: "event_guests"
+    endpoint: "/event-guests"
+    method: "GET"
+    params: {}
+    data_selector: "$"  # Selects all data from the response
+
+notes:
+  - "Authentication is required using an API key included in the headers of each request."
+  - "Luma API does not support incremental loading."
+  - "Refer to the official Luma API documentation for any updates or changes."
+
+errors:
+  - 401  # Unauthorized - Invalid API key
+  - 403  # Forbidden - Access denied
+  - 429  # Too Many Requests - Rate limit exceeded
+
+auth_info:
+  mentioned_objects:
+    - "API key requirements: The API key must be passed in the Authorization header."
+    - "Authentication methods: Use the API key for authorization."
+
+source_metadata:
+  description: "Luma Events API provides access to event information and details about guests attending those events."

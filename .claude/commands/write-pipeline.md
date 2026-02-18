@@ -21,7 +21,12 @@ Search the web for: `dlthub <source-name>`
   - This generates a pipeline script and a YAML spec file — use those as the source reference for writing the pipeline
 - If no dlthub page is found, search instead for: `<source-name> REST API documentation` and use the official API docs as the reference.
 
-### 2. Set up the environment
+### 2. Handle authentication
+
+If the source requires credentials (API key, token, etc.), follow the `/setup-auth` skill.
+**Never ask the user to provide credentials in the chat.** Write placeholders to `.dlt/secrets.toml` and tell them to fill it in.
+
+### 4. Set up the environment
 
 ```bash
 uv venv
@@ -32,7 +37,7 @@ uv add numpy
 uv add pandas
 ```
 
-### 3. Write the pipeline
+### 5. Write the pipeline
 
 Using the source docs found above, write a dlt REST API pipeline following this pattern:
 
@@ -63,39 +68,6 @@ pipeline = dlt.pipeline(
 pipeline.run(source)
 ```
 
-### 4. Show the loaded schema
+### 6. View the data
 
-Once the pipeline runs successfully, show the user a summary of what was loaded:
-
-```bash
-uv run dlt pipeline <pipeline_name> schema
-```
-
-Parse the output and present a clean summary to the user:
-- List each table with its key columns (exclude dlt internal columns like `_dlt_id`, `_dlt_load_id`, `_dlt_parent_id`)
-- Note any child tables and which parent they belong to
-
-### 5. Show basic data stats
-
-Use `pipeline.dataset()` to show the user a quick preview of what was loaded:
-
-```python
-import dlt
-
-pipeline = dlt.pipeline(
-    pipeline_name="<pipeline_name>",
-    destination="duckdb",
-    dataset_name="<dataset_name>",
-)
-
-dataset = pipeline.dataset()
-
-# Row counts across all tables
-print(dataset.row_counts().df().to_string())
-
-# Sample 5 rows from each main table (exclude child tables and dlt system tables)
-for table_name in ["<table_1>", "<table_2>"]:
-    print(dataset[table_name].limit(5).df().to_string())
-```
-
-Present the output as a summary table to the user — row counts first, then a 5-row sample per main table showing only meaningful columns.
+Once the pipeline has run successfully, follow the `/view-data` skill to show the user the loaded schema and a data preview.
