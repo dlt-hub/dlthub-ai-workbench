@@ -14,12 +14,16 @@ def rick_and_morty_source():
         },
         "resource_defaults": {
             "primary_key": "id",
-            "write_disposition": "replace",
+            "write_disposition": "merge",
             "endpoint": {
                 "data_selector": "results",
                 "paginator": {
                     "type": "json_link",
                     "next_url_path": "info.next",
+                },
+                "incremental": {
+                    "cursor_path": "created",
+                    "initial_value": "2017-01-01T00:00:00.000Z",
                 },
             },
         },
