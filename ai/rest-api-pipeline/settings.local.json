@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(uv venv:*)",
+      "Bash(source:*)",
+      "Bash(uv pip install:*)",
+      "WebFetch(domain:dlthub.com)",
+      "Bash(dlt init:*)",
+      "WebSearch",
+      "WebFetch(domain:shopify.dev)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "mcp__dlt-pipeline-mcp__available_tables",
+      "mcp__dlt-pipeline-mcp__table_schema",
+      "mcp__dlt-pipeline-mcp__table_head",
+      "mcp__dlt-pipeline-mcp__query_sql",
+      "WebFetch(domain:duckdb.org)",
+      "WebFetch(domain:docs.marimo.io)",
+      "Bash(uv run:*)",
+      "WebFetch(domain:developers.activecampaign.com)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "dlt-pipeline-mcp"
+  ]
+}
