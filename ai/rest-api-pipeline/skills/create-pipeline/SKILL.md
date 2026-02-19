@@ -144,7 +144,7 @@ access_token = "ak-*******-cae"
 
 ### 7. First pipeline run
 
-**Get Feedback** before you run the pipeline for a first time. Show summary of files that you changed or generated.
-
-1. If you were able to fully configure the pipeline (no secrets needed) — run pipeline, then use `validate-data` to inspect schema and data
-2. If user needs to configure secrets — run pipeline to get the expected error, then use `debug-pipeline` to diagnose and guide credential setup
+**ALWAYS Get Feedback** before you run the pipeline for a first time. Show summary of files that you changed or generated.
+**ALWAYS use debug-pipeline** for first run to diagnose and guide credential setup
+**ALWAYS use validate-data** to inspect schema and data
+**NEVER add more endpoints** before that - keep it simple

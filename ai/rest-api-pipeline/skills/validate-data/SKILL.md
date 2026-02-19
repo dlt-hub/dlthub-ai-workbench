@@ -79,5 +79,5 @@ Re-run the pipeline after changes (`dev_mode` gives a fresh dataset each time). 
 
 ## Next steps
 
-- **User is happy with data** → suggest `add-endpoint` for more resources, or `query-data` for interactive analysis
+- **User is happy with data** → suggest `add-endpoint` for more resources, `view-data` for querying, or `create-report` for visualization
 - **Need to fix pipeline code** → edit and re-run with `debug-pipeline`
