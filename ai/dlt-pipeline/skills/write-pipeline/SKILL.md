@@ -19,7 +19,7 @@ Search the web for: `dlthub <source-name>`
   - Fetch that page and extract the `dlt init` command (e.g. `dlt init dlthub:<source_identifier> duckdb`)
   - Run the command: `uv run <dlt init command>`
   - This generates a pipeline script and a YAML spec file — use those as the source reference for writing the pipeline
-- If no dlthub page is found, search instead for: `<source-name> REST API documentation` and use the official API docs as the reference.
+- If no dlthub page is found, search instead for: `<source-name> REST API documentation` and use the official API docs as the reference. Try and stick to a source's own rest api docs, no third party sources
 
 ### 2. Set up the environment
 
@@ -62,6 +62,29 @@ pipeline = dlt.pipeline(
 )
 pipeline.run(source)
 ```
+
+### 3b. (Optional) Chain detail endpoints with transformers
+
+If the API has a **list endpoint → detail endpoint** pattern (e.g. `/users` returns a list, `/users/{id}` returns full details per user), use a `@dlt.transformer` instead of a separate resource:
+
+```python
+@dlt.resource
+def users():
+    yield from get_users()  # list endpoint
+
+@dlt.transformer(data_from=users)
+def user_details(user):
+    yield get_user_detail(user["id"])  # detail endpoint per item
+
+# Run with pipe syntax
+pipeline.run(users | user_details)
+```
+
+Use this pattern when:
+- A second endpoint requires an ID or field from the first endpoint's results
+- Fetching details individually per item (avoids loading a flat partial list)
+
+Skip this step if all required data is available from the list endpoint directly.
 
 ### 4. Show the loaded schema
 

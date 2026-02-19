@@ -1,5 +1,10 @@
 # put your configuration values here
 
+[sources.activecampaign_pipeline.activecampaign_source]
+# Your ActiveCampaign account base URL — found in Settings → Developer → API Access
+# Format: https://youraccountname.api-us1.com/api/3/
+base_url = "https://dlthub67333.activehosted.com"
+
 [runtime]
 log_level="WARNING"  # the system log level of dlt
 # use the dlthub_telemetry setting to enable/disable anonymous usage data reporting, see https://dlthub.com/docs/reference/telemetry

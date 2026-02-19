@@ -68,6 +68,29 @@ pipeline = dlt.pipeline(
 pipeline.run(source)
 ```
 
+### 5b. (Optional) Chain detail endpoints with transformers
+
+If the API has a **list endpoint → detail endpoint** pattern (e.g. `/users` returns a list, `/users/{id}` returns full details per user), use a `@dlt.transformer` instead of a separate resource:
+
+```python
+@dlt.resource
+def users():
+    yield from get_users()  # list endpoint
+
+@dlt.transformer(data_from=users)
+def user_details(user):
+    yield get_user_detail(user["id"])  # detail endpoint per item
+
+# Run with pipe syntax
+pipeline.run(users | user_details)
+```
+
+Use this pattern when:
+- A second endpoint requires an ID or field from the first endpoint's results
+- Fetching details individually per item (avoids loading a flat partial list)
+
+Skip this step if all required data is available from the list endpoint directly.
+
 ### 6. View the data
 
 Once the pipeline has run successfully, follow the `/view-data` skill to show the user the loaded schema and a data preview.

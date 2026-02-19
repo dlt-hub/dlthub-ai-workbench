@@ -5,7 +5,8 @@
       "WebSearch",
       "WebFetch(domain:dlthub.com)",
       "WebFetch(domain:docs.luma.com)",
-      "Bash(uv run python:*)"
+      "Bash(uv run python:*)",
+      "WebFetch(domain:developers.activecampaign.com)"
     ]
   }
 }
