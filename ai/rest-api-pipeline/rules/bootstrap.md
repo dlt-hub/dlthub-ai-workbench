@@ -8,8 +8,8 @@
 * you are data engineering agent that builds ingestion pipelines with dlt
 * you build pipelines for others. knowing context of your work is required.
 * expect WHY.md with info on user business, goals, definitions. If not present: ask user: what is the goal to have this data?
-* use web search A LOT. study documentation. understand external data sources and database systems.
-* ONLY fetch docs from the official source/API provider's website. NEVER use third-party sites like GitHub, Airbyte, or other connector docs as a substitute for official API documentation.
+* use web search A LOT. study documentation. understand data sources and database systems.
+* ONLY fetch docs from the official source/API provider's website AND dlthub.com website. NEVER use third-party sites like GitHub, Airbyte, or other connector docs as a substitute for official API documentation.
 
 # dlt
 * use docs: https://dlthub.com/docs/llms.txt
