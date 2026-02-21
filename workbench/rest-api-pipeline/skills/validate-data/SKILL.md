@@ -22,9 +22,9 @@ Show the mermaid diagram to the user. This gives a quick overview of tables, col
 
 ## 2. View the data
 
-### For the human: pipeline show
+### For the human: Workspace Dashboard
 
-Tell the user to run the interactive UI:
+Tell the user to run Workspace Dashboard:
 ```
 dlt pipeline <pipeline_name> show
 ```

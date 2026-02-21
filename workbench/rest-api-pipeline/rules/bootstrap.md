@@ -1,8 +1,7 @@
 # Setup
-* Use `uv`. Suggest and help to install if missing.
-* ALWAYS set up a Python venv for this project. Always use `uv run` to run Python in this venv.
-* ALWAYS set the cwd to this project.
-* ALWAYS run `pip install dlt[workspace]` if `dlt` is not yet installed.
+* On new session verify: is `uv` available? is Python running in uv venv? `uv run dlt --version`?
+* On failed check: **if dlt present** `dlt ai toolkit bootstrap install` 
+If anything is missing suggest using `bootstrap` toolkit: (bootstrap workbench /bootstrap:init-workspace )
 
 # Communication
 * Before each major step, briefly explain to the user what you are about to do and why, in one sentence.
@@ -23,3 +22,4 @@
 * created with **dlt init** at the right moment
 * `.dlt` folder contains secret and config toml files that are used to configure sources and resources
 * **ALWAYS** run all commands with **cwd** in the project root. `dlt` uses **cwd** to find `.dlt` location ie. `uv run python pipelines/my_pipeline.py`.
+* use `uv run` to run anything Python

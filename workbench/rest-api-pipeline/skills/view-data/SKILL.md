@@ -11,7 +11,16 @@ Query data loaded by a dlt pipeline using Python. Use in standalone scripts, inl
 Parse `$ARGUMENTS`:
 - `pipeline-name` (required): the dlt pipeline name (e.g., `anthropic_usage_pipeline`)
 
-## dlt dataset API
+## Workspace Dashboard UI if just exploring
+
+Tell the user to run Workspace Dashboard **if no precise query or instructions were give**, this
+assumes user wants to just look at the data. Otherise
+```
+dlt pipeline <pipeline_name> show
+```
+This opens a browser with table schemas, row counts, and sample data.
+
+## dlt dataset API for ad hoc reports
 
 **Essential Reading:**
 - `https://dlthub.com/docs/general-usage/dataset-access/dataset.md`
