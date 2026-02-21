@@ -11,11 +11,14 @@ Locate the best dlt source for what the user wants to extract data from.
 Parse `$ARGUMENTS`:
 - `source-name` (required): what the user wants to extract data from (e.g., "alpaca markets", "stripe", "postgres", "csv files", "rest api")
 
+## Goal
+Do the research on available data source options and let the user to make informed decision what you will build. This is the moment you gather
+requirements from the user, learn about goals and intended data usage. You build context for other tasks. At the end you provide clear instructions
+how to start creating pipeline.
+
 ## Steps
 
 ### 1. Classify the request
-
-Determine if the source name maps to a **built-in core source**:
 
 | User says (examples) | Core source |
 |---|---|
@@ -65,10 +68,12 @@ Does this match what you need?
 **If the request maps to a core source (step 1):** report it directly — no confirmation needed.
 ```
 Core source: <source_type>
-  sql_database: extracts tables from SQL databases (Postgres, MySQL, MSSQL, Oracle, etc.)
   rest_api: declarative REST API connector with auth, pagination, and incremental loading
+  sql_database: extracts tables from SQL databases (Postgres, MySQL, MSSQL, Oracle, etc.)
   filesystem: reads files (CSV, Parquet, JSONL) from local disk or cloud storage (S3, GCS, Azure)
 ```
+
+For sql_database and filesystem
 
 ### 5. Web search fallback
 

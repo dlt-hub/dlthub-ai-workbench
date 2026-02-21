@@ -1,0 +1,1 @@
+global rules and skills installed by default

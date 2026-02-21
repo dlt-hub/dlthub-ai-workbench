@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv --version:*)",
+      "Bash(uv run:*)",
+      "WebSearch",
+      "Bash(cat:*)",
+      "Bash(make validate-plugins:*)"
+    ]
+  }
+}
