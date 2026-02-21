@@ -41,7 +41,7 @@ Review the conversation looking for:
 - marimo patterns (underscore variable scoping, altair chart setup)
 - New chart types or interactive UI patterns
 
-**Pipeline creation** (`create-pipeline`, `add-endpoint`):
+**Pipeline creation** (`create-rest-api-pipeline`, `add-endpoint`):
 - API-specific auth or pagination quirks
 - Config resolution surprises
 - Source/resource parameterization patterns

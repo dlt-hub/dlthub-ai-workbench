@@ -1,10 +1,10 @@
 ---
-name: rename-content
+name: rename-component
 description: Rename a skill, command, or rule within a toolkit and update all references. Use when the user wants to rename a plugin component.
 argument-hint: <toolkit:old-name> <new-name>
 ---
 
-# Rename toolkit content
+# Rename toolkit component
 
 Rename a skill, command, or rule and update all cross-references within the toolkit.
 

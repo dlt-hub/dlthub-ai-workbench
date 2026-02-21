@@ -160,5 +160,5 @@ Do NOT remove settings the user had before you started debugging.
 ## Next steps
 
 - **Load successful** → use `validate-data` to inspect schema and data
-- **Config/secrets missing** → check TOML sections, revisit `create-pipeline` step 6b for credential setup
-- **No pipeline exists** → use `create-pipeline` to scaffold one first
+- **Config/secrets missing** → check TOML sections, revisit `create-rest-api-pipeline` step 6b for credential setup
+- **No pipeline exists** → use `create-rest-api-pipeline` to scaffold one first
