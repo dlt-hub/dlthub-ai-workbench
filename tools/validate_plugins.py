@@ -7,7 +7,7 @@ Checks:
 - plugin.json exists and name matches marketplace entry
 - Skills have valid SKILL.md with frontmatter (name, description)
 - Skill frontmatter name matches directory name
-- Commands are valid .md files
+- Commands have valid frontmatter (name, description), name matches filename
 - Rules are catch-all (no frontmatter allowed)
 - workflow.md (`skill-name`) references point to real skill directories
 - All workbench/ directories (except _init) must be listed in marketplace
@@ -76,14 +76,37 @@ def validate_toolkit_content(
 
             skill_names.add(skill_dir.name)
 
-    # --- commands ---
+    # --- commands (must have frontmatter with name and description) ---
     commands_dir = plugin_dir / "commands"
     if commands_dir.is_dir():
         for cmd_file in sorted(commands_dir.iterdir()):
             if cmd_file.suffix != ".md":
                 warnings.append(f"[{pname}] non-markdown in commands/: {cmd_file.name}")
-            elif cmd_file.stat().st_size == 0:
+                continue
+            if cmd_file.stat().st_size == 0:
                 errors.append(f"[{pname}] empty command: {cmd_file.name}")
+                continue
+
+            fm = parse_frontmatter(cmd_file)
+            fm_name = fm.get("name", "")
+            fm_desc = fm.get("description", "")
+
+            if not fm_name:
+                errors.append(
+                    f"[{pname}] commands/{cmd_file.name} "
+                    f"missing 'name' in frontmatter"
+                )
+            elif fm_name != cmd_file.stem:
+                errors.append(
+                    f"[{pname}] commands/{cmd_file.name} "
+                    f"frontmatter name '{fm_name}' != filename '{cmd_file.stem}'"
+                )
+
+            if not fm_desc:
+                errors.append(
+                    f"[{pname}] commands/{cmd_file.name} "
+                    f"missing 'description' in frontmatter"
+                )
 
     # --- rules (must be catch-all, no frontmatter) ---
     rules_dir = plugin_dir / "rules"

@@ -1,3 +1,8 @@
+---
+name: init-workspace
+description: Setup and verify a dlt workspace. Checks uv, venv, dlt installation, presents a plan, then executes after user confirmation.
+---
+
 # Initialize dlt workspace
 
 Makes sure that `uv`, Python `venv` and `dlt` is installed, then sets up AI support.

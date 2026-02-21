@@ -26,7 +26,7 @@ Every toolkit under `workbench/` must be listed in `marketplace.json` — except
 A toolkit is a Claude Code plugin. It may contain:
 
 - **Skills** (`skills/<name>/SKILL.md`) — frontmatter required (`name`, `description`). Name must match directory name.
-- **Commands** (`commands/<name>.md`) — plain markdown, no frontmatter. User-invoked via `/toolkit:command`.
+- **Commands** (`commands/<name>.md`) — frontmatter required (`name`, `description`). Name must match filename. User-invoked via `/toolkit:command`.
 - **Rules** (`rules/*.md`) — **catch-all only**, no frontmatter allowed. Loaded into every session unconditionally.
 - **MCP servers** (`.mcp.json`) — stdio transport, use `${CLAUDE_PLUGIN_ROOT}` for paths.
 

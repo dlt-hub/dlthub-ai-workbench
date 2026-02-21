@@ -1,14 +1,29 @@
 # Component compatibility matrix
 
-How `dlt ai` installs workbench components across AI platforms.
+How `dlt ai toolkit` manages workbench components across AI platforms.
+
+## CLI commands
+
+```
+dlt ai toolkit list                            [--location] [--branch]
+dlt ai toolkit <name> info                     [--location] [--branch]
+dlt ai toolkit <name> install [--agent] [--overwrite] [--location] [--branch]
+```
+
+| Command | Description |
+|---------|-------------|
+| `list` | List available toolkits with name and description |
+| `<name> info` | Show what's inside a toolkit (skills, commands, rules, MCP servers) |
+| `<name> install` | Install toolkit components into the current project |
 
 ## Component types
 
-| Component | Source dir | Description |
-|-----------|-----------|-------------|
+| Component | Source | Description |
+|-----------|--------|-------------|
 | skill | `skills/<name>/` | Directory with `SKILL.md` + supporting files, copied as a tree |
 | command | `commands/<name>.md` | Single markdown file, slash-command or prompt template |
 | rule | `rules/<name>.md` | Single markdown file, always-on context injected by the IDE |
+| ignore | `.claudeignore` | Glob patterns for files the AI should not read or index |
 
 ## Platform support
 
@@ -17,6 +32,7 @@ How `dlt ai` installs workbench components across AI platforms.
 | skill | native | native | native |
 | command | native | native | converted to skill |
 | rule | native | native | converted to skill |
+| ignore | native | native | native |
 
 ## Install paths
 
@@ -25,6 +41,7 @@ How `dlt ai` installs workbench components across AI platforms.
 | skill | `.claude/skills/<name>/` | `.cursor/skills/<name>/` | `.agents/skills/<name>/` |
 | command | `.claude/commands/<name>.md` | `.cursor/commands/<name>.md` | `.agents/skills/<name>/SKILL.md` |
 | rule | `.claude/rules/<plugin>-<name>.md` | `.cursor/rules/<plugin>-<name>.mdc` | `.agents/skills/<plugin>-<name>/SKILL.md` |
+| ignore | `.claudeignore` | `.cursorignore` | `.codexignore` |
 
 ## Transforms applied during install
 
@@ -33,14 +50,20 @@ How `dlt ai` installs workbench components across AI platforms.
 | skill | passthrough | passthrough | passthrough |
 | command | passthrough | passthrough | wrapped with `name`/`description` frontmatter |
 | rule | non-Claude frontmatter stripped (keeps `name`, `description`) | `alwaysApply: true` added, `description` derived from first heading if missing | wrapped with `name`/`description` frontmatter |
+| ignore | passthrough (file renamed) | passthrough (file renamed) | passthrough (file renamed) |
 
 ## Conflict handling
 
-When a destination path already exists, the component is skipped with a warning. Existing files are never overwritten.
+By default, when a destination path already exists the component is skipped with a warning.
+
+Pass `--overwrite` to `install` to replace existing files:
+- Skills: `shutil.copytree` with `dirs_exist_ok=True` (merges into existing directory, user files preserved)
+- Commands, rules, ignore: `write_text` overwrites the file
+- MCP servers: all servers from the toolkit are merged (existing entries with the same name are replaced)
 
 ## Auto-detection priority
 
-When `--variant` is omitted, the platform is detected in this order:
+When `--agent` is omitted, the platform is detected in this order:
 
 1. **Runtime env vars** (set by the IDE when it spawns the CLI): Claude Code > Codex > Cursor
 2. **Project-local file probes** (checked in priority order):
