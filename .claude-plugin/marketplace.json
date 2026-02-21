@@ -24,6 +24,14 @@
       "version": "0.1.0",
       "category": "data",
       "tags": ["dlt", "workspace", "setup"]
+    },
+    {
+      "name": "data-exploration",
+      "source": "./ai/data-exploration",
+      "description": "Explore data loaded by dlt pipelines with marimo, datasets, and ibis",
+      "version": "0.1.0",
+      "category": "data",
+      "tags": ["dlt", "marimo", "ibis", "data-exploration"]
     }
   ]
 }
