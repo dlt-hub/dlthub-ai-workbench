@@ -6,7 +6,7 @@ A collection of **toolkits** (compatible with Claude Code plugins) for data engi
 
 ```
 .claude-plugin/marketplace.json    # Marketplace catalog listing all toolkits
-ai/                                # All toolkits live here
+workbench/                                # All toolkits live here
   <toolkit-name>/                  # One directory per toolkit
     .claude-plugin/plugin.json     # Plugin manifest (name must match directory)
     skills/                        # Skills (SKILL.md with frontmatter)
@@ -21,7 +21,7 @@ Makefile                           # make validate-plugins
 
 ## Toolkit conventions
 
-Every toolkit under `ai/` must be listed in `marketplace.json` — except `_init`, which is a special toolkit for shared rules and skills that is not distributed via the marketplace. `_init` follows the same structure and validation rules as any other toolkit but has no `.claude-plugin/plugin.json`.
+Every toolkit under `workbench/` must be listed in `marketplace.json` — except `_init`, which is a special toolkit for shared rules and skills that is not distributed via the marketplace. `_init` follows the same structure and validation rules as any other toolkit but has no `.claude-plugin/plugin.json`.
 
 A toolkit is a Claude Code plugin. It may contain:
 

@@ -9,7 +9,7 @@ argument-hint: <toolkit-path>
 Deep-validate a toolkit's markdown files: external references, cross-references, and component accuracy.
 
 Parse `$ARGUMENTS`:
-- `toolkit-path` (optional): path to toolkit directory (e.g. `ai/rest-api-pipeline`). If omitted, validate all toolkits under `ai/`.
+- `toolkit-path` (optional): path to toolkit directory (e.g. `workbench/rest-api-pipeline`). If omitted, validate all toolkits under `workbench/`.
 
 ## 1. Build component map
 

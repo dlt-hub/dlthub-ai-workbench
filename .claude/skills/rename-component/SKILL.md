@@ -14,12 +14,12 @@ Parse `$ARGUMENTS`:
 
 ## 1. Identify the component
 
-Run `uv run python tools/extract_refs.py ai/<toolkit>` to get the component map.
+Run `uv run python tools/extract_refs.py workbench/<toolkit>` to get the component map.
 
 Determine what `old-name` is:
-- **Skill**: exists in `components.skills` → directory at `ai/<toolkit>/skills/<old-name>/`
-- **Command**: exists in `components.commands` → file at `ai/<toolkit>/commands/<old-name>.md`
-- **Rule**: exists in `components.rules` → file at `ai/<toolkit>/rules/<old-name>.md`
+- **Skill**: exists in `components.skills` → directory at `workbench/<toolkit>/skills/<old-name>/`
+- **Command**: exists in `components.commands` → file at `workbench/<toolkit>/commands/<old-name>.md`
+- **Rule**: exists in `components.rules` → file at `workbench/<toolkit>/rules/<old-name>.md`
 
 If `old-name` doesn't match any component, ERROR and stop.
 

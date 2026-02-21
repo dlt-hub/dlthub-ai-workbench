@@ -3,14 +3,14 @@
 
 Checks:
 - marketplace.json structure
-- Each plugin source points to a directory under ./ai/ with last segment matching plugin name
+- Each plugin source points to a directory under ./workbench/ with last segment matching plugin name
 - plugin.json exists and name matches marketplace entry
 - Skills have valid SKILL.md with frontmatter (name, description)
 - Skill frontmatter name matches directory name
 - Commands are valid .md files
 - Rules are catch-all (no frontmatter allowed)
 - workflow.md (`skill-name`) references point to real skill directories
-- All ai/ directories (except _init) must be listed in marketplace
+- All workbench/ directories (except _init) must be listed in marketplace
 - _init toolkit is validated structurally but exempt from marketplace
 """
 
@@ -19,7 +19,7 @@ import re
 import sys
 from pathlib import Path
 
-AI_DIR = "ai"
+AI_DIR = "workbench"
 INIT_TOOLKIT = "_init"  # special toolkit: validated but not in marketplace
 
 
@@ -131,11 +131,11 @@ def validate(root: Path) -> tuple[list[str], list[str], dict[str, set[str]]]:
         source = entry.get("source", "")
         plugin_dir = root / source
 
-        # source must live under ./ai/
+        # source must live under ./workbench/
         source_path = Path(source)
         clean = str(source_path).lstrip("./")
-        if not clean.startswith("ai/"):
-            errors.append(f"[{pname}] source '{source}' must be under ./ai/")
+        if not clean.startswith("workbench/"):
+            errors.append(f"[{pname}] source '{source}' must be under ./workbench/")
 
         # last path segment must match plugin name
         if Path(source).name != pname:
@@ -170,7 +170,7 @@ def validate(root: Path) -> tuple[list[str], list[str], dict[str, set[str]]]:
             INIT_TOOLKIT, init_dir, errors, warnings
         )
 
-    # --- all ai/ dirs (except _init) must be in marketplace ---
+    # --- all workbench/ dirs (except _init) must be in marketplace ---
     marketplace_names = {e.get("name") for e in marketplace.get("plugins", [])}
     ai_dir = root / AI_DIR
     if ai_dir.is_dir():

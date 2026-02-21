@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "rest-api-pipeline",
-      "source": "./ai/rest-api-pipeline",
+      "source": "./workbench/rest-api-pipeline",
       "description": "One shot REST API data pipelines with dlt (data load tool). Find sources, scaffold pipelines, debug, validate data, add endpoints, configure incremental loading, query data, and create interactive reports.",
       "version": "0.1.0",
       "category": "data",
@@ -19,7 +19,7 @@
     },
     {
       "name": "bootstrap",
-      "source": "./ai/bootstrap",
+      "source": "./workbench/bootstrap",
       "description": "Prepare Python environment for dlthub workspace",
       "version": "0.1.0",
       "category": "data",
@@ -27,7 +27,7 @@
     },
     {
       "name": "data-exploration",
-      "source": "./ai/data-exploration",
+      "source": "./workbench/data-exploration",
       "description": "Explore data loaded by dlt pipelines with marimo, datasets, and ibis",
       "version": "0.1.0",
       "category": "data",

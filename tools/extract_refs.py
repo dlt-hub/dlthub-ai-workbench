@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Extract references from toolkit markdown files for validation.
 
-For each toolkit under ai/, outputs:
+For each toolkit under workbench/, outputs:
 - Component map: skills, commands, rules (for cross-reference resolution)
 - Per-file URL extractions with surrounding context lines
 
 Usage:
     python tools/extract_refs.py [toolkit_path]
     python tools/extract_refs.py                     # all toolkits
-    python tools/extract_refs.py ai/rest-api-pipeline  # single toolkit
+    python tools/extract_refs.py workbench/rest-api-pipeline  # single toolkit
 """
 
 import json
@@ -89,7 +89,7 @@ def scan_toolkit(plugin_dir: Path) -> dict:
 
 def main():
     root = Path(__file__).resolve().parent.parent
-    ai_dir = root / "ai"
+    ai_dir = root / "workbench"
 
     if len(sys.argv) > 1:
         target = root / sys.argv[1]
