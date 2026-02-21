@@ -4,12 +4,14 @@ description: Create a dlt REST API pipeline. Use for dlthub context sources (dlt
 argument-hint: <dlt-init-command>
 ---
 
-# Create a dlt pipeline
+# Create a rest api dlt pipeline
 
-Create the simplest pipeline with a single endpoint, no pagination, incremental loading etc. to make it run ASAP. Use `dlt init` command (typically provided by the find-source skill).
+Create the simplest working dlt pipeline — single endpoint, no pagination or incremental loading — to get data flowing fast.
 
-Parse `$ARGUMENTS`:
-- `dlt-init-command` (required): the full `dlt init` command, e.g. `dlt init dlthub:shopify_store duckdb` or `dlt init sql_database postgres`
+**Requires a `dlt init` command as the argument** (e.g. `dlt init dlthub:shopify_store duckdb`).
+If you don't have one yet, run `find-source` first to identify the right source.
+
+The argument is the full `dlt init` command to run (e.g. `dlt init dlthub:shopify_store duckdb` or `dlt init sql_database postgres`).
 
 ## Steps
 
@@ -135,12 +137,14 @@ Create and TOML sections with config/secrets that your source/resources need (ie
 - Use real values if you have it
 - Use placeholders if you do not have it (ie. secrets). Make placeholder meaningful - ie. to look like redacted API KEY.
 
-For a single source, `[sources]` is the simplest. For multiple sources in one project, scope by module:
+**Always** use source name in layout:
+
 ```toml
 # .dlt/secrets.toml
-[sources]
+[sources.<name>]
 access_token = "ak-*******-cae"
-``` 
+```
+- `<name>` = `name=` arg on `@dlt.source` if set; otherwise the function name
 
 ### 7. First pipeline run
 
