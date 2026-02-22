@@ -1,7 +1,7 @@
 ---
 name: validate-data
 description: Validate schema and data after a successful dlt pipeline load. Use when the user wants to check if loaded data looks correct, inspect table schemas, fix data types, flatten nested structures, or refine the data shape.
-argument-hint: <pipeline_name>
+argument-hint: [pipeline-name] [-- <hints>]
 ---
 
 # Validate loaded data
@@ -9,7 +9,8 @@ argument-hint: <pipeline_name>
 After a successful pipeline load, verify the schema and data make sense. Fix data types, nested structures, and missing columns as needed.
 
 Parse `$ARGUMENTS`:
-- `pipeline_name` (required): the dlt pipeline name
+- `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
+- `hints` (optional, after `--`): specific validation concerns
 
 ## 1. Inspect schema
 

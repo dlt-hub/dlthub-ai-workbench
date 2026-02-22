@@ -67,7 +67,7 @@ Read dlt docs on `RESTClient`: `https://dlthub.com/docs/general-usage/http/rest-
 
 Update the source docstring to list the new resource and show `with_resources()` examples.
 
-### 5. Debug pipeline
+### 4. Debug pipeline
 
 #### Test the new endpoint in isolation
 
@@ -98,7 +98,7 @@ for item in source.resources["my_resource"]:
 Now **Use** `debug-pipeline` skill with the tricks above!
 
 
-### 6. Review consistency with existing resources
+### 5. Review consistency with existing resources
 
 Check if the existing pipeline uses patterns that the new resource should also adopt:
 
@@ -112,7 +112,7 @@ Flag any gaps to the user — the new resource works now but may need these patt
 After adding, use `validate-data` to verify schema and data look correct.
 
 
-### 7. Report
+### 6. Report
 
 ```
 Endpoint added: <resource_name>

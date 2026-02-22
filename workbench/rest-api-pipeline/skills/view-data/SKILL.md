@@ -1,7 +1,7 @@
 ---
 name: view-data
 description: Query, explore, or view data loaded by a dlt pipeline. Use when the user asks to query data, explore loaded tables, check row counts, write Python that reads pipeline data, or asks questions like "show me the data", "what users are there", "how much did we spend". Covers dlt dataset API, ibis expressions, and ReadableRelation.
-argument-hint: <pipeline-name>
+argument-hint: [pipeline-name] [-- <hints>]
 ---
 
 # View pipeline data
@@ -9,7 +9,8 @@ argument-hint: <pipeline-name>
 Query data loaded by a dlt pipeline using Python. Use in standalone scripts, inline code, or as the data access layer for reports.
 
 Parse `$ARGUMENTS`:
-- `pipeline-name` (required): the dlt pipeline name (e.g., `anthropic_usage_pipeline`)
+- `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
+- `hints` (optional, after `--`): additional requirements or focus areas (e.g., `-- show top users by spend`)
 
 ## Workspace Dashboard UI if just exploring
 

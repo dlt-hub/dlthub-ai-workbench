@@ -1,7 +1,7 @@
 ---
 name: create-marimo-report
 description: Create an interactive marimo notebook to visualize and report on pipeline data. Use when the user wants a dashboard, charts, visual analysis, or a marimo notebook for data exploration. For data access patterns, see explore-data skill.
-argument-hint: <pipeline-name> [-- <report-description>]
+argument-hint: [pipeline-name] [-- <report-description>]
 ---
 
 # Create a data report
@@ -9,7 +9,7 @@ argument-hint: <pipeline-name> [-- <report-description>]
 Create an interactive marimo notebook to visualize and explore data loaded by a dlt pipeline. Uses the dlt dataset API from `explore-data` skill for data access.
 
 Parse `$ARGUMENTS`:
-- `pipeline-name` (required): the dlt pipeline name (e.g., `anthropic_usage_pipeline`)
+- `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
 - `report-description` (optional, after `--`): describes what reports/views the notebook should contain (e.g., `-- daily cost breakdown by model and cache hit rates`). When provided, skip the "ask the user what they want to explore" step and use this description to drive the analysis.
 
 ## 1. Understand the data

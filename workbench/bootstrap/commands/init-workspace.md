@@ -50,12 +50,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv
 ```
 
-**Install dlt** (if missing):
+**Install dlt** (if missing or outdated):
 ```
-uv pip install dlt[workspace]
+uv pip install --upgrade --pre dlt[workspace]
 ```
 
-This installs dlt with marimo, ibis, and other workspace tools.
+This installs (or upgrades) dlt with marimo, ibis, and other workspace tools. `--pre` allows alpha/pre-release versions.
 
 ## Phase 4: AI init
 

@@ -1,7 +1,7 @@
 ---
 name: debug-pipeline
 description: Debug and inspect a dlt pipeline after running it. Use after a pipeline run (success or failure) to inspect traces, load packages, schema, data, and diagnose errors like missing credentials or failed jobs.
-argument-hint: <pipeline_name>
+argument-hint: [pipeline-name] [-- <hints>]
 ---
 
 # Debug a dlt pipeline
@@ -9,7 +9,8 @@ argument-hint: <pipeline_name>
 **Essential Reading** https://dlthub.com/docs/reference/explainers/how-dlt-works
 
 Parse `$ARGUMENTS`:
-- `pipeline_name` (required): the dlt pipeline name
+- `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
+- `hints` (optional, after `--`): specific issue to investigate
 
 ## Before debugging: increase verbosity
 
