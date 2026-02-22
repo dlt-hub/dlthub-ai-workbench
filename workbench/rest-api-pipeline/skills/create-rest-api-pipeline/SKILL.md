@@ -37,7 +37,7 @@ Run the provided `dlt init` command in the active venv. Depending on the source 
 - `<name>_pipeline.py` — basic intro template (less useful, prefer core sources)
 
 **Shared files** (created on first init, updated on subsequent runs):
-- `.dlt/secrets.toml` — credentials template (may append new entries)
+- `.dlt/secrets.toml` — credentials template
 - `.dlt/config.toml` — pipeline config
 - `requirements.txt` — Python dependencies
 - `.gitignore`
@@ -49,10 +49,9 @@ Run `ls -la` again to confirm what was created.
 Read the following files to understand the scaffold:
 - `<source>_pipeline.py` — the pipeline code template
 - `<source>-docs.yaml` — API endpoint scaffold with auth, endpoints, params, data selectors (if present)
-- `.dlt/secrets.toml` — source/destination secrets ie. `api_key`. **You are allowed to read and write this file**
 - `.dlt/config.toml` — source/destination config ie. `api_url`
 
-Do NOT read the `.md` file.
+Do NOT read the `.md` file or any `secrets.toml` file.
 
 ### 4. Research before writing code
 
@@ -133,22 +132,30 @@ def my_source(
 
 **Essential Reading** Credentials & config resolution: `https://dlthub.com/docs/general-usage/credentials/setup.md` `https://dlthub.com/docs/general-usage/credentials/advanced`
 
-Create and TOML sections with config/secrets that your source/resources need (ie base url, api key). Fill those in `config.toml` and `secrets.toml`
-- Use real values if you have it
-- Use placeholders if you do not have it (ie. secrets). Make placeholder meaningful - ie. to look like redacted API KEY.
-
-**Always** use source name in layout:
+**Config** (non-secret values like `base_url`, `api_version`): edit `.dlt/config.toml` directly.
 
 ```toml
-# .dlt/secrets.toml
+# .dlt/config.toml
 [sources.<name>]
+base_url = "https://api.example.com/v1/"
+```
+
+**Secrets** (API keys, tokens, passwords): **never** read or write `secrets.toml` directly.
+- `dlt ai secrets view-redacted` — inspect what's already configured
+- `dlt ai secrets update-fragment` — add or update credentials
+
+```
+dlt ai secrets update-fragment '[sources.<name>]
 access_token = "ak-*******-cae"
+'
 ```
 - `<name>` = `name=` arg on `@dlt.source` if set; otherwise the function name
+- Use meaningful placeholders that hint at format (not generic `<configure me>`)
 
-### 7. First pipeline run
+For more complex credential setup (research where to get keys, multiple providers), use `setup-secrets` skill.
 
 **ALWAYS Get Feedback** before you run the pipeline for a first time. Show summary of files that you changed or generated.
-**ALWAYS use debug-pipeline** for first run to diagnose and guide credential setup
-**ALWAYS use validate-data** to inspect schema and data
+
+### 7. Debug pipeline - first run
+When user requests to run pipeline **ALWAYS use `debug-pipeline`** to diagnose and guide credential setup
 **NEVER add more endpoints** before that - keep it simple

@@ -1,15 +1,16 @@
 ---
-name: create-report
-description: Create an interactive marimo notebook to visualize and report on pipeline data. Use when the user wants a dashboard, charts, visual analysis, or a marimo notebook for data exploration. For data access patterns, see view-data skill.
-argument-hint: <pipeline-name>
+name: create-marimo-report
+description: Create an interactive marimo notebook to visualize and report on pipeline data. Use when the user wants a dashboard, charts, visual analysis, or a marimo notebook for data exploration. For data access patterns, see explore-data skill.
+argument-hint: <pipeline-name> [-- <report-description>]
 ---
 
 # Create a data report
 
-Create an interactive marimo notebook to visualize and explore data loaded by a dlt pipeline. Uses the dlt dataset API from `view-data` skill for data access.
+Create an interactive marimo notebook to visualize and explore data loaded by a dlt pipeline. Uses the dlt dataset API from `explore-data` skill for data access.
 
 Parse `$ARGUMENTS`:
 - `pipeline-name` (required): the dlt pipeline name (e.g., `anthropic_usage_pipeline`)
+- `report-description` (optional, after `--`): describes what reports/views the notebook should contain (e.g., `-- daily cost breakdown by model and cache hit rates`). When provided, skip the "ask the user what they want to explore" step and use this description to drive the analysis.
 
 ## 1. Understand the data
 
@@ -23,7 +24,7 @@ Show the mermaid diagram to the user — tables, columns, types, relationships.
 
 ### Query sample data
 
-Use MCP tools or the `view-data` dataset API to get:
+Use MCP tools or the `explore-data` dataset API to get:
 - Row counts per table
 - Sample rows from key tables
 - Value distributions for important columns (distinct values, min/max, nulls)
@@ -70,7 +71,7 @@ marimo edit --watch --no-token <pipeline_name>_explore.py
 
 ## 3. Connect to pipeline data
 
-Use `dlt.attach()` and `dataset()` — see `view-data` skill for the full API reference.
+Use `dlt.attach()` and `dataset()` — see `explore-data` skill for the full API reference.
 
 ```python
 @app.cell

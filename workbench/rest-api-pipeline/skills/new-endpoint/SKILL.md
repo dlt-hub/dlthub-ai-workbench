@@ -1,5 +1,5 @@
 ---
-name: add-endpoint
+name: new-endpoint
 description: Add a new REST API endpoint/resource to an existing dlt pipeline. Use when the user wants to pull additional data from an API that already has a working pipeline.
 argument-hint: <endpoint-description>
 ---
@@ -65,17 +65,11 @@ Define a custom `@dlt.resource` inside the `@dlt.source` function. Use `RESTClie
 
 Read dlt docs on `RESTClient`: `https://dlthub.com/docs/general-usage/http/rest-client.md`
 
-#### Debugging pagination
-
-Iterate over the resource directly without loading to destination:
-```python
-for item in source.resources["my_resource"]:
-    print(item)
-```
-
 Update the source docstring to list the new resource and show `with_resources()` examples.
 
-### 4. Test the new endpoint in isolation
+### 5. Debug pipeline
+
+#### Test the new endpoint in isolation
 
 Use `debug-pipeline` after each run to inspect traces and load packages.
 
@@ -93,36 +87,18 @@ Run the pipeline:
 uv run python <source>_pipeline.py
 ```
 
-### 5. Inspect the results
+#### Debug pagination
 
-#### Schema
-```
-dlt pipeline <pipeline_name> schema --format mermaid
-```
-Check that the new tables and columns match expected API response structure.
-
-#### Data via MCP
-
-If the dlt pipeline MCP server is configured, query the new tables:
-- `table_schema` — verify column types
-- `table_head` or `query_sql` — check sample data looks correct
-
-#### Load package
-```
-dlt pipeline -v <pipeline_name> load-package
-```
-Verify the new resource's jobs completed successfully.
-
-### 6. Run all resources together
-
-Restore `__main__` to load all resources (or the set the user wants):
+Iterate over the resource directly without loading to destination:
 ```python
-pipeline.run(source.add_limit(1))
+for item in source.resources["my_resource"]:
+    print(item)
 ```
 
-Run again and verify all resources load without conflicts.
+Now **Use** `debug-pipeline` skill with the tricks above!
 
-### 7. Review consistency with existing resources
+
+### 6. Review consistency with existing resources
 
 Check if the existing pipeline uses patterns that the new resource should also adopt:
 
@@ -135,7 +111,8 @@ Flag any gaps to the user — the new resource works now but may need these patt
 
 After adding, use `validate-data` to verify schema and data look correct.
 
-### 8. Report
+
+### 7. Report
 
 ```
 Endpoint added: <resource_name>

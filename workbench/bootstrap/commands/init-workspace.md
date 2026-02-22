@@ -1,6 +1,6 @@
 ---
 name: init-workspace
-description: Setup and verify a dlt workspace. Checks uv, venv, dlt installation, presents a plan, then executes after user confirmation.
+description: Sets up dlthub workspace. Ensures `uv`, Python env and dlt are present. Installs LLM toolkit to kickstart future work.
 ---
 
 # Initialize dlt workspace
@@ -59,7 +59,12 @@ This installs dlt with marimo, ibis, and other workspace tools.
 
 ## Phase 4: AI init
 
-tbd.
+Setup essential skills and rules from dlthub init toolkit:
+```
+uv run dlt ai init
+```
+
+Use `dlt ai toolkit list` to list AI assisted workflows.
 
 ## Phase 5: Report
 
@@ -70,3 +75,5 @@ Workspace ready:
 - dlt: <version>
 - venv: .venv/
 ```
+Offer next steps: `dlt ai toolkit list` to list AI assisted workflows. **pick only pipeline building workflows**
+

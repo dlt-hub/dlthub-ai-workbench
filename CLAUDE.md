@@ -30,6 +30,12 @@ A toolkit is a Claude Code plugin. It may contain:
 - **Rules** (`rules/*.md`) — **catch-all only**, no frontmatter allowed. Loaded into every session unconditionally.
 - **MCP servers** (`.mcp.json`) — stdio transport, use `${CLAUDE_PLUGIN_ROOT}` for paths.
 
+### Toolkit Workflow
+Each toolkit has a **workflow** rule that governs overall workflow.
+
+### Refer to authoritative docs everywhere
+Embed links to authoritative docs (ie. dlt docs) in skills/command/rules you write. They are useful when skill us used **AND TO AUTOMATICALLY REFRESH SKILLS IF AUTH SOURCE IS UPDATED**
+
 ## New Toolkit
 We have `plugin-dev` installed and since all toolkits are also Claude plugins use it to create new plugin. This is interactive
 procedure for humans - it will correctly guess marketplace location, duplicate skills etc.

@@ -37,11 +37,7 @@ Review the conversation looking for:
 - ibis gotchas (e.g., `.distinct()` is table-level, deferred refs in mutate)
 - New ReadableRelation or dataset API usage
 
-**Reports and visualization** (`create-report`):
-- marimo patterns (underscore variable scoping, altair chart setup)
-- New chart types or interactive UI patterns
-
-**Pipeline creation** (`create-rest-api-pipeline`, `add-endpoint`):
+**Pipeline creation** (`create-rest-api-pipeline`, `new-endpoint`):
 - API-specific auth or pagination quirks
 - Config resolution surprises
 - Source/resource parameterization patterns

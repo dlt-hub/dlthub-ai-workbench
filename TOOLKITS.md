@@ -23,6 +23,7 @@ dlt ai toolkit <name> install [--agent] [--overwrite] [--location] [--branch]
 | skill | `skills/<name>/` | Directory with `SKILL.md` + supporting files, copied as a tree |
 | command | `commands/<name>.md` | Single markdown file, slash-command or prompt template |
 | rule | `rules/<name>.md` | Single markdown file, always-on context injected by the IDE |
+| mcp | `mcp.json` | MCP server definitions, merged into platform config |
 | ignore | `.claudeignore` | Glob patterns for files the AI should not read or index |
 
 ## Platform support
@@ -32,6 +33,7 @@ dlt ai toolkit <name> install [--agent] [--overwrite] [--location] [--branch]
 | skill | native | native | native |
 | command | native | native | converted to skill |
 | rule | native | native | converted to skill |
+| mcp | native (JSON) | native (JSON) | native (TOML) |
 | ignore | native | native | native |
 
 ## Install paths
@@ -41,6 +43,7 @@ dlt ai toolkit <name> install [--agent] [--overwrite] [--location] [--branch]
 | skill | `.claude/skills/<name>/` | `.cursor/skills/<name>/` | `.agents/skills/<name>/` |
 | command | `.claude/commands/<name>.md` | `.cursor/commands/<name>.md` | `.agents/skills/<name>/SKILL.md` |
 | rule | `.claude/rules/<plugin>-<name>.md` | `.cursor/rules/<plugin>-<name>.mdc` | `.agents/skills/<plugin>-<name>/SKILL.md` |
+| mcp | `.mcp.json` → `mcpServers` | `.cursor/mcp.json` → `mcpServers` | `.codex/config.toml` → `mcp_servers` |
 | ignore | `.claudeignore` | `.cursorignore` | `.codexignore` |
 
 ## Transforms applied during install
@@ -50,7 +53,12 @@ dlt ai toolkit <name> install [--agent] [--overwrite] [--location] [--branch]
 | skill | passthrough | passthrough | passthrough |
 | command | passthrough | passthrough | wrapped with `name`/`description` frontmatter |
 | rule | non-Claude frontmatter stripped (keeps `name`, `description`) | `alwaysApply: true` added, `description` derived from first heading if missing | wrapped with `name`/`description` frontmatter |
+| mcp | passthrough (`type` field kept) | `type` field stripped | `type` field stripped, converted to TOML |
 | ignore | passthrough (file renamed) | passthrough (file renamed) | passthrough (file renamed) |
+
+## `_init` toolkit
+
+The `_init` toolkit contains shared rules and ignore patterns. It is automatically installed (without overwrite) whenever any toolkit is installed. It does not appear in `list` output and cannot be installed directly via `install` — use `dlt ai init` for explicit installation.
 
 ## Conflict handling
 

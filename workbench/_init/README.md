@@ -1,1 +1,1 @@
-rules and skills installed by `dlt ai init`. do not add to Marketplace!
+rules and skills installed by `dlt ai init` and **silently with any other plugin**. do not add to Marketplace!

@@ -9,17 +9,10 @@
 
 ## Extend and harden
 
-4. **Add endpoints** (`add-endpoint`) — add more resources to the source
+4. **Adjust endpoint** (`adjust-endpoint`) — add pagination, remove limits, add hints, mappings, correct schema etc.
 5. **Add incremental loading** — set up `dlt.sources.incremental`, merge keys, and lag windows for production efficiency
-6. **View data** (`view-data`) — query and explore loaded data in Python
-7. **Create report** (`create-report`) — create marimo notebook for interactive analysis and visualization
+6. **Add endpoints** (`new-endpoint`) — add more resources to the source
+7. **View data** (`view-data`) — show data to the user & query and explore loaded data in Python
 
-## Cross-references
-
-- `create-rest-api-pipeline` → on first run, use `debug-pipeline` to verify structure
-- `debug-pipeline` → if `ConfigFieldMissingException`, check TOML sections and credential setup from `create-rest-api-pipeline` step 6b. If credentials are wrong or unknown, research the data source (like `find-source` does).
-- `debug-pipeline` → if pipeline loads successfully, move to `validate-data`
-- `validate-data` → if data shape needs changes, re-run pipeline with `debug-pipeline` after edits
-- `validate-data` → when user is happy, suggest `add-endpoint` for more resources, `view-data` for querying, or `create-report` for visualization
-- `add-endpoint` → after adding, use `debug-pipeline` + `validate-data` to verify the new resource
-- `view-data` → provides the data access API used by `create-report`
+## Related toolkits
+- **data-exploration** — for deeper data exploration, interactive marimo notebooks, and reports
