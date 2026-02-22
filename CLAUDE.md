@@ -16,6 +16,7 @@ workbench/                                # All toolkits live here
   _init/                           # Special toolkit: shared rules/skills, NOT in marketplace
 tools/                             # Dev tooling
   validate_plugins.py              # Marketplace & plugin consistency checker
+  extract_refs.py                  # Extract component map & external URLs from a toolkit
 Makefile                           # make validate-plugins
 ```
 
@@ -31,20 +32,29 @@ A toolkit is a Claude Code plugin. It may contain:
 - **MCP servers** (`.mcp.json`) — stdio transport, use `${CLAUDE_PLUGIN_ROOT}` for paths.
 
 ### Toolkit Workflow
-Each toolkit has a **workflow** rule that governs overall workflow.
+Each toolkit has a **workflow** rule that shows how skills should be used together.
 
 ### Refer to authoritative docs everywhere
-Embed links to authoritative docs (ie. dlt docs) in skills/command/rules you write. They are useful when skill us used **AND TO AUTOMATICALLY REFRESH SKILLS IF AUTH SOURCE IS UPDATED**
+Embed links to authoritative docs (ie. dlt docs) in skills/commands/rules you write. They are useful when skill is used **AND TO AUTOMATICALLY REFRESH SKILLS IF AUTH SOURCE IS UPDATED**.
 
 ## New Toolkit
 We have `plugin-dev` installed and since all toolkits are also Claude plugins use it to create new plugin. This is interactive
 procedure for humans - it will correctly guess marketplace location, duplicate skills etc.
 
-## Validation
+## Validation & Maintenance
 
+### Quick check
 Run after any change to skills, rules, commands, or marketplace.json:
 ```
 make validate-plugins
 ```
-
 Checks: marketplace ↔ plugin.json name consistency, skill frontmatter, rule format, command files, workflow.md references.
+
+### Maintenance skills
+- `/rename-component <toolkit:old-name> <new-name>` — rename a skill, command, or rule and update all cross-references within the toolkit.
+- `/validate-toolkits <toolkit-path>` — deep-validate a toolkit: check external doc URLs are live, cross-references resolve, and fix what can be fixed.
+- `improve-skills` (per-toolkit, in rest-api-pipeline) — capture session learnings back into skills. Run at the end of a session.
+
+### Helper scripts
+- `uv run python tools/extract_refs.py workbench/<toolkit>` — extract component map and external URLs for a toolkit.
+- `uv run python tools/dump_session.py` — dump current session for review.
