@@ -8,9 +8,7 @@ argument-hint: <pipeline_name> [table_name]
 
 Essential reading: https://dlthub.com/docs/hub/features/quality/data-quality
 
-> **Setup**: `uv add "dlt[hub]"` — also ensure `numpy` and `pandas` are installed (`uv add numpy pandas`) since `.df()` requires them.
-
-> **Note:** `dlt.hub.data_quality` is under active development. Do a quick web search for `dlt.hub.data_quality site:dlthub.com` to confirm the API before writing checks.
+> **Setup**: `uv add "dlt[hub]"` — also `uv add numpy pandas` for `.df()` support.
 
 Parse `$ARGUMENTS`:
 - `pipeline_name` (required): the dlt pipeline name
@@ -24,22 +22,15 @@ Read `WHY.md` for business definitions. If absent, ask the user:
 
 ## 2. Review schema and data
 
-Use `validate-data` output if already run. Otherwise:
-
-```
-dlt pipeline <pipeline_name> schema --format mermaid
-```
-
-Peek at data before writing checks:
+Use `validate-data` output if already run. Otherwise peek at data:
 
 ```python
 import dlt
 dataset = dlt.attach("<pipeline_name>").dataset()
-df = dataset.ibis().table("<table_name>").to_pandas()
-print(df.head()); print(df.dtypes)
+print(dataset["<table_name>"].head().df())
 ```
 
-Identify candidates: primary keys → `is_unique`/`is_primary_key`; required fields → `is_not_null`; enum columns → `is_in`; numeric → `case()`.
+Identify candidates: primary keys, required fields, enum columns, numeric ranges.
 
 ## 3. Available checks
 
@@ -48,95 +39,39 @@ from dlt.hub import data_quality as dq
 
 dq.checks.is_not_null("user_id")                              # completeness
 dq.checks.is_unique("order_id")                               # uniqueness
+dq.checks.is_primary_key("order_id")                          # unique + not null
+dq.checks.is_primary_key(["tenant_id", "order_id"])           # composite key
 dq.checks.is_in("status", ["active", "inactive", "pending"])  # validity
-dq.checks.case("amount >= 0")                                 # row-level SQL, passes when true
+dq.checks.case("amount >= 0")                                 # row-level SQL condition
 ```
 
-> **Known bug (dlthub ≤0.22.0):** `is_primary_key()` generates SQL with a hardcoded `value` column instead of the actual column name, causing a `LineageFailedException`. **Workaround:** use `is_unique("col") + is_not_null("col")` instead. For composite keys, use both checks on each column.
+### Known issues (dlthub ≤0.22.0)
 
-> `where()` (table-level aggregates) is not in the current API — volume checks not supported.
+- **`is_primary_key()`** — hardcoded `value` column causes `LineageFailedException`. Workaround: `is_unique("col")` + `is_not_null("col")`. Test first — prefer `is_primary_key` if it works on the installed version.
+- **`where()`** — listed in docs but not yet implemented. Use `case()` as workaround.
+- **`.df()` import error** — `uv add numpy pandas`
 
-## 4. Implement
+## 4. Write and run checks (post-load)
 
-Create `<pipeline_name>_quality.py`:
+Copy `scripts/run_quality_checks.py` to `<pipeline_name>_quality.py`. Customize:
+1. Set `PIPELINE_NAME`
+2. Fill in `_get_checks()` with checks from step 3
 
-```python
-import dlt
-from dlt.hub import data_quality as dq
+Run: `uv run python <pipeline_name>_quality.py [table_name]`
 
+Result format: wide DataFrame — one row with `row_count` column + one column per check (count of passing rows). A check **fails** when its value < `row_count`.
 
-def run_checks(pipeline_name: str, table_name: str | None = None) -> dict:
-    """Run data quality checks. Raises SystemExit(1) if any check fails."""
-    dataset = dlt.attach(pipeline_name).dataset()
-    results = {}
-    failed = False
+**Pre-load alternative** (attach to resources, can halt pipeline on failure): See [references/pre-load-checks.md](references/pre-load-checks.md).
 
-    for table in ([table_name] if table_name else dataset.tables):
-        checks = _get_checks(table)
-        if not checks:
-            continue
-        check_plan = dq.prepare_checks(dataset[table], checks=checks)
-        df = check_plan.df()
-        results[table] = df
-        print(f"\n--- {table} ---")
-        print(df.to_string(index=False))
-        # Result is wide-format: one row with row_count + one column per check (count of passing rows)
-        row_count = df["row_count"].iloc[0]
-        failed_checks = [
-            col for col in df.columns
-            if col != "row_count" and df[col].iloc[0] < row_count
-        ]
-        if failed_checks:
-            print(f"\nFAILED: {', '.join(failed_checks)}")
-            failed = True
+## 5. Integrate into pipeline
 
-    if failed:
-        raise SystemExit(1)
-    print("\nAll checks passed.")
-    return results
+Add to the pipeline's `__main__` block to run checks after every load:
 
-
-def _get_checks(table: str) -> list:
-    checks_by_table = {
-        # "orders": [
-        #     dq.checks.is_unique("order_id"),
-        #     dq.checks.is_not_null("order_id"),
-        #     dq.checks.is_in("status", ["pending", "shipped", "delivered"]),
-        #     dq.checks.case("amount >= 0"),
-        # ],
-    }
-    return checks_by_table.get(table, [])
-
-
-if __name__ == "__main__":
-    import sys
-    pipeline_name = "<pipeline_name>"
-    table_name = sys.argv[1] if len(sys.argv) > 1 else None
-    run_checks(pipeline_name, table_name)
-```
-
-Run:
-```
-uv run python <pipeline_name>_quality.py [table_name]
-```
-
-## 5. Act on failures
-
-**Integrate post-load** (recommended — add to pipeline's `__main__` block):
 ```python
 load_info = pipeline.run(source)
 print(load_info)
 from <pipeline_name>_quality import run_checks
-run_checks(pipeline.pipeline_name)  # raises SystemExit(1) on failure
-```
-
-**Log without blocking**:
-```python
-for table, df in run_checks(pipeline_name).items():
-    row_count = df["row_count"].iloc[0]
-    failed = [c for c in df.columns if c != "row_count" and df[c].iloc[0] < row_count]
-    if failed:
-        print(f"ALERT: quality failures in {table}: {', '.join(failed)}")
+run_checks(pipeline.pipeline_name)
 ```
 
 ## Next steps
