@@ -32,6 +32,14 @@
       "version": "0.1.0",
       "category": "data",
       "tags": ["dlt", "marimo", "ibis", "data-exploration"]
+    },
+    {
+      "name": "dlthub-runtime",
+      "source": "./workbench/dlthub-runtime",
+      "description": "Deploy and manage dlt pipelines on dlt Hub Runtime — login, deploy, launch, schedule, and monitor jobs",
+      "version": "0.1.0",
+      "category": "data",
+      "tags": ["dlt", "runtime", "deploy", "schedule"]
     }
   ]
 }
