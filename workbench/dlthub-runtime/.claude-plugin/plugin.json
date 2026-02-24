@@ -1,0 +1,12 @@
+{
+  "name": "dlthub-runtime",
+  "description": "Deploy and manage dlt pipelines on dlt Hub Runtime",
+  "version": "0.1.0",
+  "author": {
+    "name": "dlthub"
+  },
+  "homepage": "https://dlthub.com/docs",
+  "repository": "https://github.com/dlt-hub/dlthub-ai-workbench",
+  "license": "ELv2",
+  "keywords": ["dlt", "runtime", "deploy", "schedule"]
+}

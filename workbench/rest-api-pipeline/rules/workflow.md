@@ -12,7 +12,8 @@
 4. **Adjust endpoint** (`adjust-endpoint`) — add pagination, remove limits, add hints, mappings, correct schema etc.
 5. **Add incremental loading** — set up `dlt.sources.incremental`, merge keys, and lag windows for production efficiency
 6. **Add endpoints** (`new-endpoint`) — add more resources to the source
-7. **View data** (`view-data`) — show data to the user & query and explore loaded data in Python
+7. **Ensure data quality** (`ensure-data-quality`) — add runtime checks (nulls, uniqueness, valid values) and metrics to resources using `dlt.hub.data_quality`
+8. **View data** (`view-data`) — show data to the user & query and explore loaded data in Python
 
 ## Related toolkits
 - **data-exploration** — for deeper data exploration, interactive marimo notebooks, and reports
