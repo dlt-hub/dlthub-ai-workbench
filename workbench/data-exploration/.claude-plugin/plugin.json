@@ -6,7 +6,7 @@
     "name": "dltHub, Inc."
   },
   "homepage": "https://dlthub.com/docs",
-  "repository": "https://github.com/dlt-hub/dlthub-ai-workbench",
-  "license": "https://github.com/dlt-hub/dlthub-ai-workbench/blob/master/LICENSE",
+  "repository": "https://github.com/dlt-hub/dlt-ai-dev-kit",
+  "license": "Apache-2.0",
   "keywords": ["dlt", "marimo", "ibis", "data-exploration"]
 }
