@@ -11,6 +11,20 @@ Parse `$ARGUMENTS`:
 - `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
 - `hints` (optional, after `--`): additional requirements or focus areas (e.g., `-- show spending by model`)
 
+## Model routing and token policy
+
+Use explicit routing metadata for deterministic execution:
+
+- `model_tier`: `FAST`
+- `max_output_tokens`: `1200`
+- `context_budget_strategy`: `minimal`
+- `escalation_rule`: escalate to `BALANCED` only if pipeline ambiguity remains after one clarification.
+- `caching_rule`: cache profile digest by `pipeline_name + schema_hash`.
+
+Token budget guidance:
+- connection/profile summary + row counts: `<= 900`
+- path-selection prompt: `<= 300`
+
 ## Workspace Dashboard UI if just exploring
 
 Tell the user to run Workspace Dashboard **if no precise query or instructions were given**, this
@@ -79,7 +93,7 @@ dataset("SELECT * FROM my_table WHERE amount > 100").df()
 
 ## Next steps
 
-After profiling, present the path selection (see `rules/workflow.md`):
+After profiling, present path selection (see `rules/workflow.md`):
 
 ```
 How would you like to explore this data?
@@ -91,6 +105,37 @@ How would you like to explore this data?
    Full ontology mapping, business intent, up to 10 interactive charts.
 ```
 
-- **Overview** → `ground-ontology --mode overview` → `plan-visualizations --mode overview` → `create-marimo-report --mode overview`
-- **In-Depth** → `ground-ontology --mode in-depth` → `plan-visualizations --mode in-depth` → `create-marimo-report --mode in-depth`
+- Default selection remains `Overview`.
+- Preserve recommendation label and choice architecture.
+- Emit `mode: overview | in-depth` for deterministic gating.
+
+## Required artifact output
+
+When used in workflow mode, emit the compact `evidence_pack` artifact for downstream BALANCED/DEEP agents:
+
+```
+evidence_pack:
+  schema_excerpt:
+    tables: list[str]
+    key_edges: list[{from_table, from_col, to_table, to_col}]
+    child_edges: list[{parent_table, child_table, parent_key, child_key}]
+  summary_stats:
+    row_counts: list[{table, rows}]
+    cardinality_notes: list[str]
+    null_rate_notes: list[str]
+    temporal_ranges: list[{table, column, min, max}] | []
+  anomaly_flags: list[str]
+  user_responses_compressed:
+    mode_rationale: str
+    constraints: list[str]
+  mode: overview | in-depth
+```
+
+Rules:
+- Include only relevant schema excerpts, not full dumps.
+- Include only key summary statistics needed for ontology and visualization planning.
+- Keep user responses compressed and deterministic.
+
+- **Overview** → `ground-ontology --mode overview` (bounded parallel A/B/C ontology inference + synthesis + selection) → `plan-visualizations --mode overview` → `create-marimo-report --mode overview`
+- **In-Depth** → `ground-ontology --mode in-depth` (bounded parallel A/B/C ontology inference + synthesis + selection) → `plan-visualizations --mode in-depth` → `create-marimo-report --mode in-depth`
 - **Standalone** → use `create-marimo-report` directly (skips ontology + viz planning)

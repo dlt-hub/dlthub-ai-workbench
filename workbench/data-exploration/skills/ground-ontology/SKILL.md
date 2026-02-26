@@ -1,109 +1,189 @@
 ---
 name: ground-ontology
-description: Map a dlt pipeline schema to business-meaningful ontology concepts (entities, relationships, metrics, dimensions, grain). Use after exploring data with explore-data and before planning visualizations. Use when user wants to understand data semantically, map schema to business terms, or prepare for structured visualization planning. Supports overview mode (auto-infer, no confirmation) and in-depth mode (full mapping with user confirmation).
+description: Map a dlt pipeline schema to business-meaningful ontology concepts (entities, relationships, metrics, dimensions, grain). Use after exploring data with explore-data and before planning visualizations. Supports deterministic multi-ontology inference with bounded parallel hypotheses and a synthesis checkpoint.
 ---
 
 # Ground data in ontology
 
-Map raw pipeline schema to business concepts using the dltHub ontology framework (https://dlthub.com/blog/ontology). Requires output from `explore-data` (schema, row counts, column stats). If not available, run `explore-data` first.
+Map raw pipeline schema to business concepts using the dltHub ontology framework (https://dlthub.com/blog/ontology).
 
-**Mode** is set by the workflow (see `rules/workflow.md`):
-- `overview` — auto-infer ontology from schema heuristics. No user confirmation. Fast.
-- `in-depth` — full mapping with user confirmation. Thorough.
+Requires output from `explore-data`:
+- `evidence_pack` (preferred)
+- or legacy profile fields: schema, row counts, column stats, temporal ranges
+
+If missing, run `explore-data` first.
+
+**Mode** is set by workflow:
+- `overview`
+- `in-depth`
 
 Default: `in-depth` when invoked standalone.
 
+## Model routing and token policy
+
+Global route defaults for this skill:
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_chain`: `FAST -> BALANCED -> DEEP` (this skill starts at BALANCED/DEEP)
+- `global_escalation_rule`:
+  - low confidence output -> escalate once
+  - unresolved ontology conflict -> escalate to `DEEP`
+  - explicit user request for deeper reasoning -> escalate to `DEEP`
+
+Per-agent routing:
+
+1. Schema Agent
+- `model_tier`: `FAST`
+- `max_output_tokens`: `900`
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_rule`: escalate to `BALANCED` for low join confidence.
+- `caching_rule`: cache canonical schema graph by `evidence_pack_hash`.
+
+2. Data Profiling Agent
+- `model_tier`: `FAST`
+- `max_output_tokens`: `900`
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_rule`: escalate to `BALANCED` for unresolved anomaly diagnostics.
+- `caching_rule`: cache profile summary by `evidence_pack_hash`.
+
+3. Ontology Hypothesis Agent A (Operational)
+- `model_tier`: `DEEP`
+- `max_output_tokens`: `1500`
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_rule`: single retry in `DEEP` with `full` context when evidence linkage is insufficient.
+- `caching_rule`: cache candidate + assumptions by `(pattern, evidence_pack_hash)`.
+
+4. Ontology Hypothesis Agent B (Dimensional)
+- `model_tier`: `DEEP`
+- `max_output_tokens`: `1500`
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_rule`: single retry in `DEEP` with `full` context when evidence linkage is insufficient.
+- `caching_rule`: cache candidate + assumptions by `(pattern, evidence_pack_hash)`.
+
+5. Ontology Hypothesis Agent C (Behavioral/Causal)
+- `model_tier`: `DEEP`
+- `max_output_tokens`: `1500`
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_rule`: single retry in `DEEP` with `full` context when evidence linkage is insufficient.
+- `caching_rule`: cache candidate + assumptions by `(pattern, evidence_pack_hash)`.
+
+6. Synthesis Agent
+- `model_tier`: `BALANCED` (`DEEP` if conflicts)
+- `max_output_tokens`: `1600`
+- `context_budget_strategy`: `evidence_pack`
+- `escalation_rule`: escalate to `DEEP` for unresolved score ties or ontology conflict.
+- `caching_rule`: cache scorecard and recommendation by candidate hashes.
+
 ---
 
-## Overview mode
+## Deterministic bounded inference
 
-Auto-classify from schema without user interaction:
+When run from workflow, execute a fixed non-recursive fan-out:
 
-1. **Entities**: each non-child table (no `_dlt_parent_id`) = one entity. Grain = table name singular.
-2. **Metrics**: all numeric columns except IDs and foreign keys.
-3. **Dimensions**: all string/categorical columns with ≤50 distinct values.
-4. **Temporal**: first date/timestamp column found per table.
-5. **Relationships**: `_dlt_parent_id` joins and FK-pattern column names.
+1. **Schema Agent**: canonical schema graph
+2. **Data Profiling Agent**: data-shape constraints
+3. **Ontology Hypothesis Agent A**: Operational ontology
+4. **Ontology Hypothesis Agent B**: Dimensional ontology
+5. **Ontology Hypothesis Agent C**: Behavioral/Causal ontology
 
-No user confirmation. Produce `ontology_map` with `confirmed: auto` and proceed.
-
-Present a one-line summary: "Auto-detected [N] entities with [M] metrics across [K] dimensions."
+Rules:
+- Exactly three ontology hypotheses (A/B/C), never more.
+- No autonomous retry loops.
+- Failures are branch-local.
+- Each candidate must include explicit evidence and assumptions.
+- All BALANCED/DEEP reasoning uses compressed `evidence_pack` inputs, not raw schema dumps.
 
 ---
 
-## In-depth mode
+## Ontology hypotheses
 
-### 1. Classify tables
+All candidates must use the same ontology structure:
+- entities (grain, metrics, dimensions, temporal)
+- relationships (from, to, join, verb)
 
-For each table:
-- **Entity** (noun): one row = one business object
-- **Bridge/junction**: many-to-many relationship. Often has composite keys or `_dlt_parent_id` from nested data.
+### A. Operational
 
-### 2. Map each entity
+Prefer process/execution entities and near-real-time actionability.
 
-| Concept | Question | Source |
-|---|---|---|
-| **Grain** | What does one row represent? | Primary key + table name |
-| **Metrics** | Which columns can be aggregated? | Numeric, high cardinality |
-| **Dimensions** | Which columns group or filter? | Categorical, low-to-medium cardinality |
-| **Temporal** | What is the time axis? | Date/timestamp columns |
-| **Attributes** | What else describes this entity? | Remaining descriptive columns |
+### B. Dimensional
 
-### 3. Map relationships
+Prefer fact/dimension framing for stable aggregation and reporting.
 
-For each FK or `_dlt_parent_id` join: identify **from**/**to** entities, label with a **verb** (e.g., "Campaign *contains* Ad Groups"), note join column(s).
+### C. Behavioral/Causal
 
-### 4. Present for confirmation
+Prefer behavior patterns and plausible drivers while labeling uncertainty.
 
-Present a pre-filled ontology — user confirms or edits, never builds from scratch.
+---
+
+## Synthesis checkpoint (required)
+
+Compare A/B/C deterministically and produce:
+- candidate validity flags
+- scorecard (coverage, join quality, metric usability, temporal fitness)
+- recommended candidate
+- unresolved assumptions
+
+Then ask one question only:
 
 ```
-ONTOLOGY MAP
----
-
-Entities:
-  - [Table A] — one row = one [grain]
-    Metrics:    [col1], [col2]
-    Dimensions: [col3], [col4]
-    Temporal:   [date_col] (range: YYYY-MM-DD to YYYY-MM-DD)
-
-  - [Table B] — one row = one [grain]
-    ...
-
-Relationships:
-  - [Table A] → [Table B] via [column] ("[A] contains [B]")
-
-Does this mapping accurately reflect your data?
+Select ontology for downstream visualization planning:
+A. Operational
+B. Dimensional (Recommended)
+C. Behavioral/Causal
 ```
 
-**Rules:**
-- Ask one question only: "Does this look right?"
-- If >5 tables, group by relationship cluster and confirm per cluster
-- Frame stakes: "This mapping guides all visualizations."
-
-**If user rejects:** ask "Which table matters most?" and re-derive outward from it. One re-attempt only.
+If user rejects all and no valid candidate remains, route to fallback summary path.
 
 ---
 
-## Output artifact
+## Evidence pack requirements
+
+The skill expects `evidence_pack` with only:
+- relevant schema excerpts
+- key summary statistics
+- anomaly flags
+- compressed user responses
+- selected path (`overview` or `in-depth`)
+
+If only legacy profile fields are available, build and cache a normalized `evidence_pack` first.
+
+---
+
+## Output artifacts
 
 ```
-ontology_map:
-  mode: overview | in-depth
-  entities:
-    - table: str
-      grain: str
-      metrics: list[str]
-      dimensions: list[str]
-      temporal_col: str | null
-  relationships:
-    - from_entity: str
-      to_entity: str
-      join_col: str
-      verb: str
-  confirmed: true | auto
+ontology_candidates:
+  - id: A | B | C
+    pattern: operational | dimensional | behavioral_causal
+    entities:
+      - table: str
+        grain: str
+        metrics: list[str]
+        dimensions: list[str]
+        temporal_col: str | null
+    relationships:
+      - from_entity: str
+        to_entity: str
+        join_col: str
+        verb: str
+    evidence:
+      - source: schema | profile
+        note: str
+    assumptions: list[str]
+    valid: true | false
+
+ontology_comparison:
+  scores:
+    A: number
+    B: number
+    C: number
+  recommended: A | B | C | null
+  candidate_count: int
+
+selected_ontology:
+  id: A | B | C
+  confirmed: true
 ```
 
 ## Next steps
 
-Use `plan-visualizations` to propose charts aligned to this ontology.
+Use `plan-visualizations` with `selected_ontology`.
