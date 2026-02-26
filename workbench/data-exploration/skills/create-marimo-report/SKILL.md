@@ -1,7 +1,6 @@
 ---
 name: create-marimo-report
-description: Create an interactive marimo notebook to visualize and report on pipeline data. Use when the user wants a dashboard, charts, visual analysis, or a marimo notebook for data exploration. For data access patterns, see explore-data skill.
-argument-hint: [pipeline-name] [-- <report-description>]
+description: Create an interactive marimo notebook to visualize and report on pipeline data. Use when the user wants a dashboard, charts, visual analysis, or a marimo notebook for data exploration. Works standalone or as final step in overview or in-depth workflow paths after ground-ontology and plan-visualizations. For data access patterns, see explore-data skill.
 ---
 
 # Create a data report
@@ -12,7 +11,31 @@ Parse `$ARGUMENTS`:
 - `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
 - `report-description` (optional, after `--`): describes what reports/views the notebook should contain (e.g., `-- daily cost breakdown by model and cache hit rates`). When provided, skip the "ask the user what they want to explore" step and use this description to drive the analysis.
 
-## 1. Understand the data
+## When coming from the workflow (overview or in-depth)
+
+If `ground-ontology` and `plan-visualizations` have already been run, you have:
+- **Ontology map**: entities, metrics, dimensions, relationships, grain (auto or confirmed)
+- **Visualization plan**: chart list with column mappings, tiers, and intent
+- **Mode**: `overview` or `in-depth`
+
+**Skip section 1 entirely** — go straight to section 2. Use the ontology for ibis query construction and the viz plan for chart cells.
+
+Restate the commitment: "Generating [overview/in-depth] notebook for [intent] analyzing [entity] with [N] charts."
+
+### Mode differences in notebook generation
+
+| Aspect | Overview | In-Depth |
+|---|---|---|
+| Max charts | 5 | 10 |
+| Interactive filter controls | No — static altair charts | Yes — `mo.ui.altair_chart()` with click-to-filter |
+| Ontology header | One-line summary | Full ontology map in markdown |
+| Stat cards | Basic (row count, date range) | Detailed (per-metric aggregates) |
+| Notebook filename | `<pipeline>_overview.py` | `<pipeline>_analysis.py` |
+| Cell count | 6–10 | 8–20 |
+
+## 1. Understand the data (standalone mode)
+
+Use this section when running **without** the upstream workflow (no ontology or viz plan).
 
 Before writing code, understand what data is available and what the user wants from it.
 
@@ -154,7 +177,60 @@ def _(mo):
     return
 ```
 
-## 7. Iterate with the user
+## 7. Verify capabilities before generation
+
+When coming from the full workflow with a viz plan: all standard chart types (line, bar, area, scatter, table, stat cards) are available via `mo.ui.altair_chart`, `mo.ui.table`, `mo.md()`. Only exception: if the viz plan includes a **custom widget**, verify the `anywidget-generator` skill is available — if not, remove that chart and note the removal to the user.
+
+## 8. Notebook generation contract
+
+The generated notebook MUST satisfy:
+
+- **Format**: single `.py` file with `@app.cell` decorators, PEP 723 inline dependency metadata
+- **Data access**: `dlt.attach()` + `pipeline.dataset()` — no hardcoded connection strings
+- **Query layer**: ibis expressions only — no raw SQL, no pandas transformations
+- **Charts**: `mo.ui.altair_chart()` for interactivity (in-depth) or static altair (overview). Max chart cells = viz plan total.
+- **Variables**: `_` prefix for cell-local. Unique names across cells. One concern per cell.
+- **No conditional wrapping**: let marimo reactivity handle state. `mo.app_meta().mode` check only in data connection cell.
+- **Documentation**: `mo.md()` header with title, intent summary, ontology summary
+
+### Overview notebook structure
+
+```
+Cell 0: PEP 723 metadata + imports
+Cell 1: dlt.attach() + dataset connection
+Cell 2: ibis table expressions
+Cell 3: Header markdown (title, one-line ontology summary)
+Cell 4: Basic stat cards (row count, date range)
+Cells 5-N: One chart per cell (3–5 charts, static altair)
+Final cell: "For deeper analysis, re-run with in-depth mode."
+```
+
+### In-depth notebook structure
+
+```
+Cell 0: PEP 723 metadata + imports
+Cell 1: dlt.attach() + dataset connection
+Cell 2: ibis table expressions (one per source table)
+Cell 3: Header markdown (title, intent, full ontology summary)
+Cell 4: Detailed stat cards (per-metric aggregates)
+Cells 5-N: One chart per cell, core tier first (up to 10, interactive altair)
+Final cell: Summary / key takeaways placeholder
+```
+
+### Final checkpoint
+
+Present the notebook outline to the user before writing the file:
+```
+NOTEBOOK READY ([overview/in-depth])
+---
+File: [filename].py
+Cells: [N]
+Charts: [chart count] ([mode])
+
+Run with: marimo edit [filename].py
+```
+
+## 9. Iterate with the user
 
 The notebook is a conversation tool. After the initial version:
 - Ask if the views are useful

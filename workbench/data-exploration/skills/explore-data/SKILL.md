@@ -1,7 +1,6 @@
 ---
 name: explore-data
 description: Query, explore, or view data loaded by a dlt pipeline using Python. Use when the user asks to query data, explore loaded tables, check row counts, write Python that reads pipeline data, or asks questions like "show me the data", "what did we load". Covers dlt dataset API, ibis expressions, and ReadableRelation.
-argument-hint: [pipeline-name] [-- <hints>]
 ---
 
 # Explore pipeline data
@@ -80,4 +79,18 @@ dataset("SELECT * FROM my_table WHERE amount > 100").df()
 
 ## Next steps
 
-- **Want visualizations?** → use `create-marimo-report` to build an interactive marimo notebook
+After profiling, present the path selection (see `rules/workflow.md`):
+
+```
+How would you like to explore this data?
+
+1. Overview (Recommended for first look)
+   Quick summary, 3–5 auto-recommended charts. Minimal questions.
+
+2. In-Depth Analysis
+   Full ontology mapping, business intent, up to 10 interactive charts.
+```
+
+- **Overview** → `ground-ontology --mode overview` → `plan-visualizations --mode overview` → `create-marimo-report --mode overview`
+- **In-Depth** → `ground-ontology --mode in-depth` → `plan-visualizations --mode in-depth` → `create-marimo-report --mode in-depth`
+- **Standalone** → use `create-marimo-report` directly (skips ontology + viz planning)
