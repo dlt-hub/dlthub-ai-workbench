@@ -52,7 +52,7 @@ Skip intent elicitation. Auto-select charts based on what the data supports:
 ```
 OVERVIEW — [N] charts from ontology [A|B|C]
 
-[List each chart: type, title, what it shows]
+[List each chart: type, title, what it shows, legend]
 
 Accept? (Yes / Switch to In-Depth Analysis / Reject all)
 ```
@@ -83,9 +83,26 @@ For each chart, specify:
 - Chart type (line, bar, scatter, heatmap, etc.)
 - Title (clear, business-meaningful)
 - X axis, Y axis, color encoding
+- **Scale type** per axis: `linear` (default) or `log`
+- **Legend**: one sentence explaining what the colors/marks represent and how to read the chart. Example: "Each bar is a product category; height is total revenue in USD." Rendered as a subtitle or caption in the notebook.
 - Source table
 - Whether it's core or supporting
 - Brief justification (one sentence)
+
+### When to use log scales
+
+Flag an axis for log scale when:
+- Values span **2+ orders of magnitude** (e.g., star counts range 1–100k, revenue $10–$1M)
+- The distribution is **power-law or exponential** (most values clustered near zero, long tail)
+- A **scatter plot** has both axes with skewed distributions — log-log often reveals structure hidden by outliers
+- Comparing **growth rates** rather than absolute values over time
+
+Do **not** use log scale when:
+- Values include zero or negatives (log of zero is undefined)
+- The range is narrow (< 10x) — linear is more intuitive
+- The audience is non-technical and may misread log axes
+
+During evidence gathering, check `max / min` ratio for metric columns. If > 100, recommend log scale in the chart spec.
 
 ---
 
@@ -97,7 +114,7 @@ When there are 5+ charts to validate, spawn a single haiku subagent to run all s
 Validate each chart against these criteria and return pass/fail per chart.
 
 Charts:
-[paste chart specs: id, type, title, x, y, source_table, grain]
+[paste chart specs: id, type, title, x, y, source_table, grain, legend]
 
 Ontology context:
 [paste selected ontology summary: entities, grain, metrics]
@@ -108,6 +125,7 @@ Criteria per chart:
 3. Answers intent — directly addresses the stated question
 4. Non-redundant — shows something different from higher-ranked charts
 5. Expressible in ibis — query can be written with ibis table/generic expressions
+6. Scale appropriate — log scale flagged when max/min > 100; no log scale on zero-inclusive axes
 
 Return: chart_id, pass/fail per criterion, drop recommendation (yes/no).
 ```
@@ -125,6 +143,7 @@ Before finalizing, validate every proposed chart against these criteria:
 | Answers intent | Does this chart directly answer the stated question? |
 | Non-redundant | Does it show something meaningfully different from higher-ranked charts? |
 | Expressible in ibis | Can the underlying query be written with ibis table/generic expressions? |
+| Scale appropriate | Should any axis use log scale (max/min > 100)? Are zero-inclusive axes kept linear? |
 
 Drop charts that fail any check. Refill from the optional set without exceeding caps.
 
@@ -134,7 +153,8 @@ Drop charts that fail any check. Refill from the optional set without exceeding 
 
 For each chart in the plan, record:
 - `id`, `tier` (core/supporting), `chart_type`, `title`
-- `x`, `y`, `color` (column names), `source_table`
+- `x`, `y`, `color` (column names), `x_scale`, `y_scale` (`linear` or `log`), `source_table`
+- `legend` — one sentence: what the colors/marks mean and how to read the chart
 - Sanity check results (pass/fail per criterion)
 
 Also record:
