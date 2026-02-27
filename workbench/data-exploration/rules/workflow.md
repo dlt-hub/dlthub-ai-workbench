@@ -82,13 +82,44 @@ Collect these concrete facts for the next steps:
 
 ## Ontology grounding
 
-Generate three ways to read the data, each focusing on different questions:
-- **A. Operational**: What's happening right now? Track events, statuses, and pipeline runs. Example: "orders table as the main event stream, status column for funnel stages."
-- **B. Analytical**: What are the numbers? Pick fact tables and group-by columns for rollups. Example: "`orders` as fact, `product_id` and `region` as dimensions, `amount` as the metric."
-- **C. Behavioral**: What drives outcomes? Link actions to results. Example: "Do users who trigger event X convert at higher rates?"
+Using the available tables, relationships, and observed data patterns, generate **exactly three ontology hypotheses**. Each hypothesis should organize the schema into meaningful business concepts, but from a distinct modeling perspective:
 
-Compare on: how many tables each covers, whether joins work cleanly, whether you can actually compute the metrics, and whether timestamps support the needed time ranges. Recommend one. Present the choice via `AskUserQuestion` with the three options as toggles (recommended first), so the user can select one rather than typing a response.
+### A. Operational Perspective  
+Model the data around real-world processes and execution flows (e.g., events, transactions, system actions). Emphasize traceability, operational monitoring, and near-real-time actionability.
 
+### B. Analytical (Dimensional) Perspective  
+Structure the data into stable facts and dimensions suitable for aggregation, reporting, and dashboarding. Emphasize metric consistency, grain clarity, and long-term analytical stability.
+
+### C. Behavioral / Causal Perspective  
+Organize entities around user or system behaviors and plausible drivers. Highlight patterns, sequences, and relationships that could support experimentation, attribution, or causal analysis.
+
+---
+
+### For Each Hypothesis
+
+- Clearly define core entities and their relationships  
+- Specify the grain of key datasets  
+- Identify primary metrics the model enables  
+- State key modeling assumptions  
+
+---
+
+### Comparison Criteria
+
+Compare the three approaches across:
+
+- **Conceptual coverage** (how well it explains the schema)  
+- **Join integrity and relational clarity**  
+- **Metric usability and semantic stability**  
+- **Temporal alignment** (event-time vs state-time fitness)
+
+---
+
+### Selection
+
+Recommend one perspective based on robustness, clarity, and downstream analytical usability.
+
+Finally, present the choice using `AskUserQuestion`, listing the three ontology options as selectable toggles (recommended option first), so the user can choose directly rather than typing a response.
 Reference: https://dlthub.com/blog/ontology — start from what the business cares about, then map tables to it.
 
 ## Visualization planning
