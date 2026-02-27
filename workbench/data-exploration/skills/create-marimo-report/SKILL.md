@@ -18,7 +18,12 @@ If upstream steps (explore-data → ground-ontology → plan-visualizations) are
 - `viz_plan` (chart specs, intent, mode)
 - Evidence gathered during exploration
 
-Restate the commitment before generating:
+Before generating, validate the handoff artifacts:
+
+1. **`selected_ontology`** must have: `id`, `label`, `entities` (with table/role/grain), `relationships`, `primary_metric`, `temporal_grain`. If any field is missing, flag it to the user rather than guessing.
+2. **`viz_plan`** must have: `mode`, `charts` (each with id/chart_type/title/x/y/source_table), `top_3_chart_ids`. If chart sanity checks show failures, drop those charts and note why.
+
+Then restate the commitment:
 
 "Generating [overview/in-depth] notebook from ontology [A|B|C] for [intent] with [N] charts."
 
@@ -304,6 +309,96 @@ def _(mo, dataset):
     ])
     return
 ```
+
+## EDA cells
+
+When the user asks for EDA (exploratory data analysis), include these standard profiling cells in the notebook. Stay scoped to the intent — only profile tables and columns relevant to the plan.
+
+### 1. Value distribution histogram
+
+Show the distribution of the primary metric column. Use `alt.Chart().mark_bar()` with a binned x-axis.
+
+```python
+@app.cell
+def _(dataset, alt, mo):
+    _df = dataset["<fact_table>"].select("<metric_column>").df()
+    _chart = alt.Chart(_df).mark_bar().encode(
+        x=alt.X("<metric_column>:Q", bin=alt.Bin(maxbins=30)),
+        y="count():Q",
+    ).properties(title="Distribution of <metric_column>")
+    mo.ui.altair_chart(_chart)
+    return
+```
+
+### 2. Null rate summary
+
+Show null percentages for key columns. Compute via ibis, display as horizontal bar chart.
+
+```python
+@app.cell
+def _(dataset, alt, mo):
+    _t = dataset["<table>"].to_ibis()
+    _total = _t.count().execute()
+    _nulls = []
+    for _col in [<relevant_columns>]:
+        _null_count = _t.filter(getattr(_t, _col).isnull()).count().execute()
+        _nulls.append({"column": _col, "null_pct": round(100 * _null_count / _total, 1)})
+    import pandas as pd
+    _df = pd.DataFrame(_nulls)
+    _chart = alt.Chart(_df).mark_bar().encode(
+        x=alt.X("null_pct:Q", title="Null %", scale=alt.Scale(domain=[0, 100])),
+        y=alt.Y("column:N", sort="-x"),
+    ).properties(title="Null Rates")
+    mo.ui.altair_chart(_chart)
+    return
+```
+
+### 3. Time series coverage
+
+When a temporal column exists, show record counts over time to reveal gaps or spikes.
+
+```python
+@app.cell
+def _(dataset, alt, mo):
+    _t = dataset["<fact_table>"].to_ibis()
+    _by_period = (
+        _t.group_by(_t.<temporal_column>.truncate("<grain>").name("period"))
+        .aggregate(count=_t.<id_column>.count())
+        .order_by("period")
+    )
+    _df = _by_period.to_pandas()
+    _chart = alt.Chart(_df).mark_line(point=True).encode(
+        x="period:T",
+        y="count:Q",
+    ).properties(title="Records over Time")
+    mo.ui.altair_chart(_chart)
+    return
+```
+
+### 4. Top-N cardinality
+
+Show the top values for the primary dimension column (e.g., top 10 authors by commit count).
+
+```python
+@app.cell
+def _(dataset, alt, mo):
+    _t = dataset["<fact_table>"].to_ibis()
+    _top = (
+        _t.group_by("<dimension_column>")
+        .aggregate(count=_t.<id_column>.count())
+        .order_by(ibis.desc("count"))
+        .limit(10)
+    )
+    _df = _top.to_pandas()
+    _chart = alt.Chart(_df).mark_bar().encode(
+        x=alt.X("count:Q"),
+        y=alt.Y("<dimension_column>:N", sort="-x"),
+    ).properties(title="Top 10 by <dimension_column>")
+    mo.ui.altair_chart(_chart)
+    return
+```
+
+Adapt column names and table names from the plan. Skip cells that don't apply (e.g., skip time series coverage if there's no temporal column). For overview mode, use `alt.Chart()` instead of `mo.ui.altair_chart()`.
 
 ## Capability check
 

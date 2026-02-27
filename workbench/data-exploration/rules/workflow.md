@@ -58,9 +58,10 @@ Decision:
 When the user has a specific goal, plan before touching the data:
 1. Say back what they want in one sentence.
 2. List the tables, columns, and aggregations you'll need.
-3. If clarifications are needed, use `AskUserQuestion` with toggle options (max 3 questions, each with 2–4 selectable choices). Do not ask open-ended questions.
-4. List candidate dlt tables (use MCP tools).
-5. Write a short plan (max 10 bullets) with specific table and column names. No code, no schema dumps.
+3. **Disambiguate grain** — ask about time granularity (Monthly / Weekly / Daily / All-time) and primary breakdown dimension (e.g., by repo, by author) when the intent involves trends or multiple grouping options. Use `AskUserQuestion` toggles. Skip when the intent is unambiguous.
+4. If further clarifications are needed, use `AskUserQuestion` with toggle options (max 2 remaining questions, each with 2–4 selectable choices). Do not ask open-ended questions.
+5. List candidate dlt tables (use MCP tools).
+6. Write a short plan (max 10 bullets) with specific table and column names, including the confirmed grain. No code, no schema dumps.
 
 Do not profile the full database before narrowing scope.
 
@@ -104,22 +105,23 @@ Organize entities around user or system behaviors and plausible drivers. Highlig
 
 ---
 
-### Comparison Criteria
+### Numeric scoring
 
-Compare the three approaches across:
+Score each hypothesis 1–5 on these criteria (max 25):
 
-- **Conceptual coverage** (how well it explains the schema)  
-- **Join integrity and relational clarity**  
-- **Metric usability and semantic stability**  
-- **Temporal alignment** (event-time vs state-time fitness)
+- **Coverage** (1–5): how much of the relevant schema does it explain?
+- **Join quality** (1–5): are relationships clean 1:many with clear keys?
+- **Metric usability** (1–5): are proposed metrics aggregable at the declared grain?
+- **Temporal fitness** (1–5): does the temporal column match the requested grain?
+- **Semantic coherence** (1–5): does it model business reality or just mirror schema structure?
+
+Sum the scores. Recommend the highest scorer. If tied, prefer the one that better matches the user's stated intent. Include the scorecard so the user can see the reasoning.
 
 ---
 
 ### Selection
 
-Recommend one perspective based on robustness, clarity, and downstream analytical usability.
-
-Finally, present the choice using `AskUserQuestion`, listing the three ontology options as selectable toggles (recommended option first), so the user can choose directly rather than typing a response.
+Present the choice using `AskUserQuestion`, listing the three ontology options as selectable toggles (recommended option first with its score), so the user can choose directly rather than typing a response.
 Reference: https://dlthub.com/blog/ontology — start from what the business cares about, then map tables to it.
 
 ## Visualization planning
@@ -142,7 +144,8 @@ Caps:
 
 If the user asks for EDA:
 - Stay scoped to the intent (don't profile everything).
-- Include: null rate, distribution, cardinality, time distribution (if applicable).
+- Use the EDA cell templates defined in `create-marimo-report`: value distribution histogram, null rate summary, time series coverage, top-N cardinality.
+- Include only the templates that apply (e.g., skip time series if no temporal column).
 - Exclude irrelevant columns/tables.
 
 ## Notebook generation
@@ -167,7 +170,7 @@ Use the Task tool to run independent work in parallel and route cheaper tasks to
 
 **Evidence gathering** (in `ground-ontology`): Spawn schema analysis and data profiling as two parallel haiku subagents. Both read the same scoped table list and return structured summaries.
 
-**Data reading options** (in `ground-ontology`): Spawn three parallel opus subagents — one for Operational (A), one for Analytical (B), one for Behavioral (C). Each gets the same table/column summary and returns its proposed mapping. Biggest parallelism win in the workflow.
+**Data reading options** (in `ground-ontology`): For complex schemas (>5 tables or multiple fact tables), spawn three parallel opus subagents — one for Operational (A), one for Analytical (B), one for Behavioral (C). Each gets the same table/column summary and returns its proposed mapping. **For simple schemas** (≤5 tables, ≤1 fact table), generate all three hypotheses inline in a single pass — the subagent overhead isn't worth it.
 
 **Chart cell generation** (in `create-marimo-report`): After the notebook architecture is decided, spawn haiku subagents to generate individual chart cells in parallel. Each gets the chart spec from the viz plan.
 

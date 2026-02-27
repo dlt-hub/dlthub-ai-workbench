@@ -165,6 +165,41 @@ Also record:
 - Any filters the user requested
 - Top 3 recommended chart IDs
 
+## Handoff contract: `viz_plan`
+
+The output passed to `create-marimo-report` must include these fields. If any are missing, the downstream skill should flag the gap rather than guessing.
+
+```
+viz_plan:
+  mode: "overview" | "in-depth"
+  ontology_id: "A" | "B" | "C"
+  intent_type: "trend" | "comparison" | "composition" | "correlation"
+  primary_question: <what the user wants answered>
+  primary_metric: <column or aggregation>
+  primary_dimension: <grouping column>
+  temporal_scope: <date range or "all-time">
+  top_3_chart_ids: [<id>, <id>, <id>]
+  charts:
+    - id: <unique_id>
+      tier: "core" | "supporting"
+      chart_type: "line" | "bar" | "scatter" | "heatmap" | ...
+      title: <business-meaningful title>
+      x: <column_name>
+      y: <column_name>
+      color: <column_name> | null
+      x_scale: "linear" | "log"
+      y_scale: "linear" | "log"
+      source_table: <table_name>
+      legend: <one sentence>
+      sanity_checks:
+        matches_grain: true | false
+        valid_aggregation: true | false
+        answers_intent: true | false
+        non_redundant: true | false
+        expressible_in_ibis: true | false
+        scale_appropriate: true | false
+```
+
 ## Next steps
 
 Pass the `selected_ontology` + `viz_plan` to `create-marimo-report`.

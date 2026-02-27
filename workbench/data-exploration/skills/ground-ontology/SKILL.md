@@ -65,9 +65,18 @@ Look at foreign keys and dlt parent/child edges. For each relationship, describe
 
 These verbs help downstream visualization make sense ("orders by user" rather than "join on user_id").
 
+## Schema complexity gate
+
+Before spawning subagents, check the schema size:
+
+- **Simple schema** (≤5 data tables AND ≤1 obvious fact/event table): Skip Phase 2 parallel agents. Generate all three ontology hypotheses in a single pass — write them yourself inline. The overhead of 3 opus subagents isn't justified when the schema has one fact table and a couple of dimension tables (the hypotheses will look nearly identical). Phase 1 evidence prep can also be done inline for ≤3 tables.
+- **Complex schema** (>5 tables OR multiple fact tables): Use the full parallel strategy below.
+
+How to identify a "fact table": it has timestamps, high row count relative to other tables, and foreign keys pointing to entity tables. If there's exactly one table like that, the schema is simple.
+
 ## Parallel execution strategy
 
-This skill has two parallelizable phases. Use the Task tool to run them concurrently.
+This skill has two parallelizable phases. Use the Task tool to run them concurrently. **Skip this section for simple schemas** (see complexity gate above).
 
 ### Phase 1: Evidence preparation (two haiku subagents in parallel)
 
@@ -163,14 +172,23 @@ For each hypothesis (A, B, C), produce:
 
 ## Synthesis checkpoint
 
-Compare A, B, and C across these criteria:
-- **Coverage**: how much of the relevant schema does it explain?
-- **Join quality**: are the proposed relationships clean (1:many, not many:many hacks)?
-- **Metric usability**: are the proposed metrics actually aggregable at the declared grain?
-- **Temporal fitness**: does the ontology handle time correctly for the data's temporal characteristics?
-- **Semantic coherence**: does it model the business reality or just mirror the schema structure?
+Score each hypothesis 1–5 on each criterion. This removes subjectivity and makes the recommendation reproducible.
 
-Produce a brief scorecard and recommendation, then present one question:
+| Criterion | 1 (Poor) | 3 (Adequate) | 5 (Excellent) |
+|---|---|---|---|
+| **Coverage** | Covers <50% of relevant tables | Covers most tables, misses some columns | All relevant tables and columns mapped |
+| **Join quality** | Many:many hacks or missing joins | Mostly clean 1:many, one workaround | All relationships are clean 1:many with clear keys |
+| **Metric usability** | Proposed metrics aren't aggregable at grain | Metrics work but some need derived columns | All metrics directly aggregable at declared grain |
+| **Temporal fitness** | No temporal column identified | Timestamps exist but grain doesn't match user intent | Temporal column matches requested grain exactly |
+| **Semantic coherence** | Mirrors schema structure, no business meaning | Business concepts present but forced | Natural mapping from schema to business reality |
+
+**Scoring process:**
+1. Score each hypothesis (A, B, C) on all 5 criteria (1–5 each).
+2. Sum the scores (max 25).
+3. Recommend the highest-scoring hypothesis. If tied, prefer the one that better matches the user's stated intent.
+4. Include the scorecard in the output so the user can see why.
+
+Produce the scorecard and recommendation, then present one question:
 
 ```
 Select ontology for downstream visualization planning:
@@ -187,6 +205,39 @@ If the user rejects all candidates and no valid alternative emerges, route to a 
 - Don't trigger full-database profiling from this skill.
 - Keep summaries concise — max 6 bullets per hypothesis.
 - Present business concepts first, schema mechanics second.
+
+## Handoff contract: `selected_ontology`
+
+The output passed to `plan-visualizations` must include these fields. If any are missing, the downstream skill should flag the gap rather than guessing.
+
+```
+selected_ontology:
+  id: "A" | "B" | "C"
+  label: "Operational" | "Dimensional" | "Behavioral"
+  summary: <one-sentence description>
+  entities:
+    - table: <table_name>
+      role: "fact" | "dimension" | "bridge" | "child"
+      grain: <what one row represents>
+      metrics: [<column_name>, ...]
+      dimensions: [<column_name>, ...]
+      temporal_column: <column_name> | null
+  relationships:
+    - from: <table_name>
+      to: <table_name>
+      join_column: <column_name>
+      verb: <business verb>
+  primary_metric: <the main number the user cares about>
+  primary_dimension: <the main grouping column>
+  temporal_grain: "daily" | "weekly" | "monthly" | "all-time"
+  scores:
+    coverage: 1-5
+    join_quality: 1-5
+    metric_usability: 1-5
+    temporal_fitness: 1-5
+    semantic_coherence: 1-5
+    total: <sum>
+```
 
 ## Next steps
 

@@ -60,8 +60,25 @@ Priority: Relation first → ibis for complex queries → raw SQL as last resort
 ## Entry mode detection
 
 Classify the user's request to decide what happens next:
-- **Intent-driven** (dashboard, metric, hypothesis, EDA goal): Skip the overview prompt. Proceed to planning — restate their intent, identify entities/grain/metrics, narrow to relevant tables, then hand off to `ground-ontology`.
+- **Intent-driven** (dashboard, metric, hypothesis, EDA goal): Skip the overview prompt. Proceed to planning — restate their intent, identify entities/grain/metrics, narrow to relevant tables. Before handing off to `ground-ontology`, disambiguate grain (see below).
 - **Exploratory** (just wants to look around): Offer the choice below.
+
+## Grain disambiguation (intent mode)
+
+After restating intent and listing candidate tables, ask the user about temporal grain and primary breakdown dimension. This determines what aggregations and time axes make sense downstream — the ontology and visualization steps depend on it.
+
+Use `AskUserQuestion` with up to 2 questions:
+
+**Time granularity** (ask when the intent involves trends or "how many over time"):
+- Monthly (Recommended) — good default for dashboards
+- Weekly — more detail, noisier
+- Daily — high resolution, works for recent data
+- All-time total — single number, no time axis
+
+**Primary breakdown** (ask when multiple grouping dimensions exist):
+- Pick from the actual dimension columns found in the schema (e.g., "by repository", "by author", "by file type")
+
+Skip these questions when the intent is unambiguous (e.g., "show me the total count" clearly means all-time, no breakdown needed). Include the chosen grain in the plan artifact and pass it through to `ground-ontology`.
 
 ## Exploration paths
 
@@ -90,6 +107,11 @@ Table: [table_name]
 Schema: [column names, types]
 Sample (first 5 rows): [paste sample]
 
+IMPORTANT: Relation has no .count() method. For row counts use either:
+- The `get_row_counts` MCP tool, or
+- dataset("SELECT COUNT(*) FROM [table_name]").fetchscalar()
+For per-column stats, use .to_ibis() with group_by/aggregate or raw SQL.
+
 Return: row count, per-column cardinality, null rate, min/max for numeric/temporal,
 any anomalies (>50% null, single-value, suspicious distributions).
 No prose — structured output only.
@@ -105,7 +127,7 @@ When feeding into the workflow (ground-ontology → plan-visualizations → crea
 - **Summary stats**: row counts, cardinality notes, null rates, temporal ranges
 - **Anomaly flags**: anything surprising in the data
 - **User context**: their chosen mode (overview/in-depth), any constraints they mentioned
-- **Plan** (intent mode): restated intent, entities, grain, metrics, dimensions, candidate tables
+- **Plan** (intent mode): restated intent, entities, grain (temporal granularity + primary breakdown), metrics, dimensions, candidate tables
 
 Narrow to relevant tables before gathering any of this — don't profile the entire database.
 
