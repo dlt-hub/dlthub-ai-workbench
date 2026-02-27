@@ -56,9 +56,9 @@ dlt ai toolkit <name> install [--agent] [--overwrite] [--location] [--branch]
 | mcp | passthrough (`type` field kept) | `type` field stripped | `type` field stripped, converted to TOML |
 | ignore | passthrough (file renamed) | passthrough (file renamed) | passthrough (file renamed) |
 
-## `_init` toolkit
+## `init` toolkit
 
-The `_init` toolkit contains shared rules and ignore patterns. It is automatically installed (without overwrite) whenever any toolkit is installed. It does not appear in `list` output and cannot be installed directly via `install` — use `dlt ai init` for explicit installation.
+The `init` toolkit contains shared rules, secrets handling, and the workspace MCP server. It is automatically installed (without overwrite) whenever any toolkit is installed. It can also be installed explicitly via `dlt ai init`.
 
 ## Conflict handling
 

@@ -4,8 +4,5 @@ version = "0.1.0"
 description = "AI toolkits for data engineering with dlt"
 requires-python = ">=3.10"
 dependencies = [
-    "dlt[duckdb]>=1.0",
+    "dlt[hub]>=1.23.0a1",
 ]
-
-[tool.uv.sources]
-dlt = { path = "/home/rudolfix/src/dlt", editable = true }

@@ -13,7 +13,7 @@ workbench/                                # All toolkits live here
     commands/                      # Slash commands (plain .md files)
     rules/                         # Catch-all rules loaded every session
     .mcp.json                      # MCP servers (optional)
-  _init/                           # Special toolkit: shared rules/skills, NOT in marketplace
+  init/                            # Shared rules, secrets handling, and workspace MCP
 tools/                             # Dev tooling
   validate_toolkits.py              # Marketplace & plugin consistency checker
   extract_refs.py                  # Extract component map & external URLs from a toolkit
@@ -22,7 +22,7 @@ Makefile                           # make validate-toolkits
 
 ## Toolkit conventions
 
-Every toolkit under `workbench/` must be listed in `marketplace.json` — except `_init`, which is a special toolkit for shared rules and skills that is not distributed via the marketplace. `_init` follows the same structure and validation rules as any other toolkit but has no `.claude-plugin/plugin.json`.
+Every toolkit under `workbench/` must be listed in `marketplace.json`.
 
 A toolkit is a Claude Code plugin. It may contain:
 

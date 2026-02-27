@@ -11,6 +11,8 @@ Works with **Claude Code**, **Cursor**, and **Codex**.
 If you don't have dlt or Python set up yet:
 
 1. Add the marketplace in Claude Code: `https://github.com/dlt-hub/dlthub-ai-workbench`
+!- ADD EXACT CLAUDE CODE COMMAND HERE
+
 2. Install the bootstrap toolkit:
    ```
    claude plugin install bootstrap@dlthub-ai-workbench --scope project
@@ -35,6 +37,15 @@ dlt ai toolkit list                           # see what's available
 dlt ai toolkit rest-api-pipeline install      # install one
 ```
 
+### Codex setup
+Codex does not support commands and rules so we convert those into skills. Codex runs in pretty strict sandbox mode. You should consider giving access
+to fetch web pages in your project or global config ie.
+`.codex/config.toml`
+```toml
+web_search = "live"
+```
+
+
 ## What is workbench
 
 Workbench is a catalog of **toolkits** that teach AI coding agents how to work with [dlt](https://dlthub.com). It is backward compatible with the Anthropic (and Cursor) marketplace and plugin system.
@@ -50,9 +61,10 @@ graph TB
     subgraph WB["Workbench — toolkits"]
         direction TB
         T2["<b>rest-api-pipeline</b><br/>Build, debug &amp; validate pipelines"]
+        T4["<b>dlthub-runtime</b><br/>Deploy to dltHub platform"]
         T3["<b>data-exploration</b><br/>Query data &amp; build reports"]
         T1["<b>bootstrap</b><br/>Environment setup"]
-        INIT["<b>_init</b><br/>Shared rules, secrets &amp; MCP"]
+        INIT["<b>init</b><br/>Shared rules, secrets &amp; MCP"]
     end
 
     subgraph Components["Toolkit anatomy"]
@@ -81,9 +93,10 @@ graph TB
 | Toolkit | Description | Components |
 |---------|-------------|------------|
 | **rest-api-pipeline** | End-to-end REST API ingestion | 8 skills, workflow, MCP |
+| **dlthub-runtime** | Deploy pipelines to dltHub platform | 2 skills, workflow, rules |
 | **data-exploration** | Interactive data analysis and reporting | 2 skills |
 | **bootstrap** | Cold-start environment setup | 1 command |
-| **_init** | Shared rules, secrets handling, workspace MCP | installed by `dlt ai init` |
+| **init** | Shared rules, secrets handling, workspace MCP | installed by `dlt ai init` |
 
 ### rest-api-pipeline workflow
 
@@ -120,7 +133,8 @@ dlt ai toolkit list                            # list available toolkits
 dlt ai toolkit <name> info                     # show toolkit contents
 dlt ai toolkit <name> install [--agent] [--overwrite]
 dlt ai secrets list                            # show secret file locations
-dlt ai secrets view-redacted                   # print secrets with values masked
+dlt ai secrets view-redacted [--path <file>]   # print secrets with values masked
+dlt ai secrets update-fragment --path <file> '<toml>'  # merge TOML into secrets file
 dlt ai mcp run [--stdio | --sse] [--features ...]
 dlt ai mcp install [--agent] [--features ...] [--name]
 ```
@@ -148,15 +162,6 @@ This is the easiest path for Claude Code users who want to get started without t
 ### MCP server
 
 Toolkits that need data access use the **dlt MCP server** — a read-only interface to your pipelines and destinations, installed automatically with each toolkit.
-
-| Tool | Feature | Description |
-|------|---------|-------------|
-| `list_pipelines` | workspace | List all dlt pipelines in the project |
-| `list_tables` | pipeline | List schemas and tables for a pipeline |
-| `get_table_schema` | pipeline | Column names, types, and SQL identifiers |
-| `get_table_create_sql` | pipeline | Generate CREATE TABLE DDL in destination dialect |
-| `preview_table` | pipeline | First 10 rows as markdown or JSONL |
-| `execute_sql_query` | pipeline | Run read-only SQL against any destination |
 
 The MCP server uses a pluggy-based feature system. The `workspace` and `pipeline` features are built into dlt. External packages (like `dlt-mcp`) can add more features (e.g. `search-docs`) via `plug_mcp` hookimpls — see [dlt-mcp#30](https://github.com/dlt-hub/dlt-mcp/issues/30).
 

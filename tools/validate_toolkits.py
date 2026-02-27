@@ -8,10 +8,10 @@ Checks:
 - Skills have valid SKILL.md with frontmatter (name, description)
 - Skill frontmatter name matches directory name
 - Commands have valid frontmatter (name, description), name matches filename
+- argument-hint uses [bracket] convention per Anthropic docs
 - Rules are catch-all (no frontmatter allowed)
 - workflow.md (`skill-name`) references point to real skill directories
-- All workbench/ directories (except _init) must be listed in marketplace
-- _init toolkit is validated structurally but exempt from marketplace
+- All workbench/ directories must be listed in marketplace
 """
 
 import json
@@ -20,7 +20,11 @@ import sys
 from pathlib import Path
 
 AI_DIR = "workbench"
-INIT_TOOLKIT = "_init"  # special toolkit: validated but not in marketplace
+
+# argument-hint must be quoted and use [bracket] convention per Anthropic docs
+# valid: "[pipeline-name]", "[filename] [format]", "[pipeline-name] [query]"
+# invalid: <angle-brackets>, unquoted values with [, -- separators
+_ARGUMENT_HINT_TOKEN = re.compile(r"^\[[\w-]+\]$")
 
 
 def parse_frontmatter(path: Path) -> dict:
@@ -74,6 +78,20 @@ def validate_toolkit_content(
                     f"missing 'description' in frontmatter"
                 )
 
+            # argument-hint: must be quoted and use [bracket] tokens
+            hint = fm.get("argument-hint", "")
+            if hint:
+                # strip surrounding quotes from our simple parser
+                hint_val = hint.strip('"').strip("'")
+                tokens = hint_val.split()
+                bad = [t for t in tokens if not _ARGUMENT_HINT_TOKEN.match(t)]
+                if bad:
+                    errors.append(
+                        f"[{pname}] {skill_dir.name}/SKILL.md "
+                        f"argument-hint tokens must use [bracket] convention, "
+                        f"got: {' '.join(bad)}"
+                    )
+
             skill_names.add(skill_dir.name)
 
     # --- commands (must have frontmatter with name and description) ---
@@ -107,6 +125,19 @@ def validate_toolkit_content(
                     f"[{pname}] commands/{cmd_file.name} "
                     f"missing 'description' in frontmatter"
                 )
+
+            # argument-hint: must use [bracket] convention
+            hint = fm.get("argument-hint", "")
+            if hint:
+                hint_val = hint.strip('"').strip("'")
+                tokens = hint_val.split()
+                bad = [t for t in tokens if not _ARGUMENT_HINT_TOKEN.match(t)]
+                if bad:
+                    errors.append(
+                        f"[{pname}] commands/{cmd_file.name} "
+                        f"argument-hint tokens must use [bracket] convention, "
+                        f"got: {' '.join(bad)}"
+                    )
 
     # --- rules (must be catch-all, no frontmatter) ---
     rules_dir = plugin_dir / "rules"
@@ -186,21 +217,12 @@ def validate(root: Path) -> tuple[list[str], list[str], dict[str, set[str]]]:
 
         all_skills[pname] = validate_toolkit_content(pname, plugin_dir, errors, warnings)
 
-    # --- _init toolkit (same validation, no marketplace/plugin.json required) ---
-    init_dir = root / AI_DIR / INIT_TOOLKIT
-    if init_dir.is_dir():
-        all_skills[INIT_TOOLKIT] = validate_toolkit_content(
-            INIT_TOOLKIT, init_dir, errors, warnings
-        )
-
-    # --- all workbench/ dirs (except _init) must be in marketplace ---
+    # --- all workbench/ dirs must be in marketplace ---
     marketplace_names = {e.get("name") for e in marketplace.get("plugins", [])}
     ai_dir = root / AI_DIR
     if ai_dir.is_dir():
         for d in sorted(ai_dir.iterdir()):
             if not d.is_dir() or d.name.startswith("."):
-                continue
-            if d.name == INIT_TOOLKIT:
                 continue
             if d.name not in marketplace_names:
                 errors.append(
@@ -227,9 +249,7 @@ def main():
 
     print()
     for pname, skills in sorted(all_skills.items()):
-        if pname == INIT_TOOLKIT:
-            print(f"  [{pname}] init toolkit (not in marketplace)")
-        elif skills:
+        if skills:
             print(f"  [{pname}] {len(skills)} skills: {', '.join(sorted(skills))}")
         else:
             print(f"  [{pname}] no skills (commands only)")

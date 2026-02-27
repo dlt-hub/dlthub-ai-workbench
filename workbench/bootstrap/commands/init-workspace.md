@@ -62,7 +62,7 @@ This installs (or upgrades) dlt with marimo, ibis, and other workspace tools.
 
 Setup essential skills and rules from dlthub init toolkit:
 ```
-uv run dlt ai init
+uv run dlt --non-interactive ai init
 ```
 
 Use `dlt ai toolkit list` to list AI assisted workflows.

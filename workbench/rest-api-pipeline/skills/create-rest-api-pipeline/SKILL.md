@@ -1,7 +1,7 @@
 ---
 name: create-rest-api-pipeline
 description: Create a dlt REST API pipeline. Use for dlthub context sources (dlthub:*), the rest_api core source, or any generic REST/HTTP API source. Not for sql_database or filesystem sources.
-argument-hint: <dlt-init-command>
+argument-hint: "[dlt-init-command]"
 ---
 
 # Create a rest api dlt pipeline
@@ -23,7 +23,7 @@ Run `ls -la` to see the current state before scaffolding.
 
 `dlt init` can be run multiple times in the same project — each run adds new files without overwriting existing pipeline scripts. It will update shared files (`.dlt/secrets.toml`, `.dlt/config.toml`, `requirements.txt`, `.gitignore`).
 
-Run the provided `dlt init` command in the active venv. Depending on the source type, this creates:
+Run the provided `dlt init` command with `--non-interactive` in the active venv. Depending on the source type, this creates:
 
 **dlthub context source** (`dlt init dlthub:<name> duckdb`):
 - `<source>_pipeline.py` — pipeline entry point with REST API template
@@ -141,11 +141,12 @@ base_url = "https://api.example.com/v1/"
 ```
 
 **Secrets** (API keys, tokens, passwords): **never** read or write `secrets.toml` directly.
-- `dlt ai secrets view-redacted` — inspect what's already configured
-- `dlt ai secrets update-fragment` — add or update credentials
+- `dlt ai secrets view-redacted` — inspect unified merged view of all secrets
+- `dlt ai secrets update-fragment --path <file>` — add or update credentials (`--path` is required)
 
+Run `dlt ai secrets list` first to pick the target file, then:
 ```
-dlt ai secrets update-fragment '[sources.<name>]
+dlt ai secrets update-fragment --path .dlt/secrets.toml '[sources.<name>]
 access_token = "ak-*******-cae"
 '
 ```

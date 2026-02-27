@@ -21,8 +21,9 @@ dlt runtime job-run info <script_or_name> [run#]  # specific run details
 ```bash
 dlt runtime logs <script_or_name>                 # latest run
 dlt runtime logs <script_or_name> <run#>          # specific run
-dlt runtime logs <script_or_name> -f              # follow in real-time
 ```
+Note: logs **always** follow. You will get stuck if job is still running. This is temporary problem.
+
 
 ## Cancel a running job
 

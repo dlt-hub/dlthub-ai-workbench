@@ -44,10 +44,10 @@ Per profile files **may** exist. You will create some of them in next step:
 ## Step 3: Set up production credentials
 
 Help user to fill config and secrets for sources and destinations. Help user to keep secrets and config clear.
-1. Investigate content of `config.toml` and `secrets.toml` (via `dlt ai secrets view-redacted`). User could put their local (`dev`) settings in workspace-scoped toml files.
-2. In that case help user to create a separate `dev` profile scoped settings.
-3. Help to create `prod` profiles config and secret files - user should fill right information for their sources and destinations.
-4. Verify the whole setup at the end. 
+1. Run `dlt ai secrets list` to see all secret files. Then `dlt ai secrets view-redacted` to see the unified merged view of all secrets. Use `dlt ai secrets view-redacted --path <file>` to inspect individual files. User could put their local (`dev`) settings in workspace-scoped toml files.
+2. In that case help user to split them: move dev-only settings into a `dev` profile file (`dlt ai secrets update-fragment --path .dlt/dev.secrets.toml '<fragment>'`).
+3. Help to create `prod` profile secrets (`dlt ai secrets update-fragment --path .dlt/prod.secrets.toml '<fragment>'`) — user should fill right information for their sources and destinations.
+4. Verify the whole setup with `dlt ai secrets view-redacted` (unified view) and per-file with `--path`.
 
 
 ## Step 4: Prepare pipelines and notebooks for production
