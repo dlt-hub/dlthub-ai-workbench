@@ -1,276 +1,138 @@
 # Data exploration workflow
 
-## Deterministic orchestration with bounded parallel agents
+## Orchestration flow
 
 ```
-[Connect + Profile] -> [Path Selection]
-      explore-data
-                     -> [Evidence Pack Build]
-                     -> [Parallel Inference Block]
-                        Schema Agent
-                        Data Profiling Agent
-                        Ontology Hypothesis Agent A (Operational)
-                        Ontology Hypothesis Agent B (Dimensional)
-                        Ontology Hypothesis Agent C (Behavioral/Causal)
-                     -> [Synthesis + Ontology Comparison Checkpoint]
-                     -> [Overview or In-Depth Viz Planning]
-                     -> [Notebook Architecture + Formatting + Mandatory marimo Verification]
+[Entry Mode Detection]
+  -> intent-driven -> [Intent Planning] -> [Scoped Data Narrowing]
+  -> exploratory   -> [Overview/In-Depth Selection]
+  -> [Evidence Gathering: schema + profiling + ontology hypotheses]
+  -> [Synthesis + Ontology Selection]
+  -> [Visualization Planning + Sanity Check]
+  -> [Notebook Generation + Mandatory marimo Verification]
 ```
 
-## Model routing policy
+## Entry mode detection
 
-### Model tiers
-- `FAST`: low latency / low cost for formatting, listing, light summaries, deterministic restatements.
-- `BALANCED`: structured reasoning for planning, synthesis, scoring, and constrained decision support.
-- `DEEP`: ontology generation, conflict resolution, and notebook architecture decisions.
+Classify the user's first message into one of:
+- `intent_driven`: they have a specific goal — a dashboard, metric question, EDA target, hypothesis, or business question.
+- `exploratory`: they want to look around and don't have a specific question yet.
 
-### Global escalation policy
-- If output confidence is low, escalate in order: `FAST -> BALANCED -> DEEP`.
-- If ontology conflict is unresolved, escalate to `DEEP`.
-- If user requests deeper reasoning, escalate to `DEEP`.
-- Escalation is bounded to one retry per step. No autonomous recursive loops.
+Decision:
+- `intent_driven` → skip the overview prompt, go straight to intent planning.
+- `exploratory` → ask whether they want overview or in-depth exploration.
 
-### Context budget strategy definitions
-- `minimal`: shortest required inputs only.
-- `evidence_pack`: use only normalized Evidence Pack sections required by the step.
-- `full`: include complete prior artifacts (reserved for hard conflict resolution only).
+## Intent planning (intent mode only)
 
-### Token budgets by phase
-- Phase 0 Connect/Profile + Path Selection: `<= 1,600` output tokens total.
-- Phase 0.5 Evidence Pack Build: `<= 1,200`.
-- Phase 1 Parallel Inference Block (all branches combined): `<= 6,800`.
-- Phase 2 Synthesis + Ontology Checkpoint: `<= 2,400`.
-- Phase 3A Overview Viz Planning + Confirm: `<= 1,800`.
-- Phase 3B In-Depth Viz Planning + Confirm: `<= 3,200`.
-- Phase 4 Notebook Architecture + Formatting + Verification: `<= 4,000`.
-- Fallback path: `<= 900`.
+When the user has a specific goal, plan before touching the data:
+1. Restate the intent concisely.
+2. Identify implied entities, grain, metrics, and dimensions.
+3. Ask at most 3 essential clarifications.
+4. Identify candidate dlt tables (use MCP tools to list tables).
+5. Produce a short plan (max 10 bullets). No code, no schema dumps.
 
-## Evidence pack standard
+Do not profile the full database before narrowing scope.
 
-All `BALANCED` and `DEEP` steps operate primarily on a compact `evidence_pack` artifact, not raw schema dumps or raw samples.
+## Data narrowing
 
-Required fields only:
-- `schema_excerpt`: relevant tables, keys, joins, parent/child references.
-- `summary_stats`: key row counts, null/cardinality ranges, temporal coverage.
-- `anomaly_flags`: data quality or join-risk flags.
-- `user_responses_compressed`: concise user choices and constraints.
-- `mode`: `overview | in-depth`.
+All downstream work follows the plan:
+- List tables, pick only the ones relevant to the plan's entities/metrics/grain.
+- Fetch schema only for selected tables.
+- Profile only plan-relevant columns.
+- Build a scoped evidence summary from these narrowed outputs.
 
-## Phase definitions with routing
+## Evidence gathering
 
-### Phase 0: Connect/profile + path selection
+Collect and organize these inputs for ontology and visualization steps:
+- Schema excerpts (selected tables only)
+- Summary stats: row counts, cardinality, null rates, temporal ranges
+- Anomaly flags
+- User responses and selected exploration mode
 
-After `explore-data` produces profile inputs, present:
+## Ontology grounding
 
-```
-Your pipeline has [N] tables with [M] total rows.
+Generate exactly three ontology hypotheses, each mapping the schema to business concepts from a different angle:
+- **A. Operational**: process/execution entities, near-real-time actionability
+- **B. Dimensional**: fact/dimension framing for stable aggregation and reporting
+- **C. Behavioral/Causal**: behavior patterns and plausible drivers
 
-How would you like to explore this data?
+Compare them on coverage, join quality, metric usability, and temporal fitness. Recommend one. Present a single checkpoint for the user to confirm or override.
 
-1. Overview (Recommended for first look)
-   Quick schema summary, basic stats, 3-5 auto-recommended charts.
-   Minimal questions. Notebook ready in one step.
+Ontology grounding follows https://dlthub.com/blog/ontology — model business reality first, then map schema to it.
 
-2. In-Depth Analysis
-   Full intent elicitation, up to 10 charts with interactive controls.
-   More questions, richer output.
+## Visualization planning
 
-(default: 1)
-```
+When the user's intent is a dashboard:
+1. Identify 3 core charts automatically.
+2. Propose up to 5 optional charts.
+3. Validate every candidate chart:
+   - Matches declared grain
+   - Uses valid aggregation
+   - Answers the stated intent
+   - Is not redundant with a higher-ranked chart
+4. Recommend top 3 only.
 
-Default: `overview`.
+Caps:
+- Overview: up to 5 charts
+- In-depth: up to 10 charts
 
-Routing:
-- `model_tier`: `FAST`
-- `max_output_tokens`: `800`
-- `context_budget_strategy`: `minimal`
-- `escalation_rule`: escalate to `BALANCED` only if mode request is ambiguous after one clarification.
-- `caching_rule`: cache profile summary and selected mode keyed by pipeline + timestamp.
+## EDA policy
 
-### Phase 0.5: Evidence Pack build
+If the user asks for EDA:
+- Stay scoped to the intent (don't profile everything).
+- Include: null rate, distribution, cardinality, time distribution (if applicable).
+- Exclude irrelevant columns/tables.
 
-Build `evidence_pack` from profile outputs before parallel inference.
+## Notebook generation
 
-Routing:
-- `model_tier`: `FAST`
-- `max_output_tokens`: `700`
-- `context_budget_strategy`: `minimal`
-- `escalation_rule`: escalate to `BALANCED` if required fields cannot be populated deterministically.
-- `caching_rule`: cache `evidence_pack` hash and reuse across Phase 1-4 unless pipeline/schema changes.
+- Architecture decisions can take more thought; code generation should be fast.
+- Mandatory marimo verification before presenting to user.
+- If marimo-related issues block the flow, point user to: https://docs.marimo.io/guides/generate_with_ai/skills/
 
-### Phase 1: Parallel inference block (bounded, exactly 5 branches)
+## Subagent parallelism and model routing
 
-1. **Schema Agent**
-- `model_tier`: `FAST`
-- `max_output_tokens`: `900`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: escalate to `BALANCED` if join graph confidence < 0.7.
-- `caching_rule`: cache canonical schema graph keyed by `evidence_pack` hash.
+Use the Task tool to run independent work in parallel and route cheaper tasks to faster models. This saves time and cost across the workflow.
 
-2. **Data Profiling Agent**
-- `model_tier`: `FAST`
-- `max_output_tokens`: `900`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: escalate to `BALANCED` if anomaly rate exceeds threshold and explanation is under-specified.
-- `caching_rule`: cache summary metrics and anomaly flags keyed by `evidence_pack` hash.
+### Model routing principles
 
-3. **Ontology Hypothesis Agent A (Operational)**
-- `model_tier`: `DEEP`
-- `max_output_tokens`: `1,500`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: retry in `DEEP` once with `full` context only if candidate invalid due to missing evidence links.
-- `caching_rule`: cache candidate artifact + assumptions keyed by ontology pattern + `evidence_pack` hash.
+| Work type | Model | Why |
+|---|---|---|
+| Schema extraction, data profiling, code generation, formatting | `haiku` | Mechanical, well-scoped tasks that don't need deep reasoning |
+| Synthesis, visualization selection, sanity validation | `sonnet` | Moderate reasoning with constrained output |
+| Intent planning, ontology hypothesis generation, complex architecture | `opus` | Deep reasoning about business meaning and design tradeoffs |
 
-4. **Ontology Hypothesis Agent B (Dimensional)**
-- `model_tier`: `DEEP`
-- `max_output_tokens`: `1,500`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: retry in `DEEP` once with `full` context only if candidate invalid due to missing evidence links.
-- `caching_rule`: cache candidate artifact + assumptions keyed by ontology pattern + `evidence_pack` hash.
+### Where to parallelize
 
-5. **Ontology Hypothesis Agent C (Behavioral/Causal)**
-- `model_tier`: `DEEP`
-- `max_output_tokens`: `1,500`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: retry in `DEEP` once with `full` context only if candidate invalid due to missing evidence links.
-- `caching_rule`: cache candidate artifact + assumptions keyed by ontology pattern + `evidence_pack` hash.
+**Evidence gathering** (in `ground-ontology`): Spawn schema analysis and data profiling as two parallel haiku subagents. Both read the same scoped table list and return structured summaries.
 
-Rules:
-- No recursive spawning.
-- No autonomous retry loops.
-- Branches are isolated and emit structured artifacts with confidence + assumptions.
-- Branch failures are isolated. Synthesis continues if at least one ontology branch succeeds.
+**Ontology hypotheses** (in `ground-ontology`): Spawn three parallel opus subagents — one for Operational (A), one for Dimensional (B), one for Behavioral/Causal (C). Each receives the same evidence pack and returns an independent hypothesis. This is the biggest parallelism win in the workflow.
 
-### Phase 2: Synthesis + ontology selection checkpoint
+**Chart cell generation** (in `create-marimo-report`): After the notebook architecture is decided, spawn haiku subagents to generate individual chart cells in parallel. Each gets the chart spec from the viz plan.
 
-Deterministic **Synthesis Agent** compares A/B/C using schema + profiling evidence from `evidence_pack`:
-- `ontology_candidates` (0-3 valid)
-- deterministic scorecard
-- recommended default candidate
-- explicit assumptions/uncertainties
+### Rules for subagents
 
-Routing:
-- `model_tier`: `BALANCED`
-- `max_output_tokens`: `1,600`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: escalate to `DEEP` if candidate ordering ties, score conflict persists, or unresolved ontology conflict.
-- `caching_rule`: cache scorecard + recommendation keyed by candidate hashes.
+- Always launch independent subagents in the **same message** so they run concurrently.
+- Each subagent gets a self-contained prompt with all context it needs — it has no access to conversation history.
+- Never spawn recursive subagents (a subagent should not spawn its own subagents).
+- If a subagent fails, its failure is isolated — use the remaining results and note the gap.
 
-Then present one checkpoint:
+## Workflow routing
 
-```
-ONTOLOGY CANDIDATES
----
-A. Operational   [score]
-B. Dimensional   [score]  (Recommended)
-C. Behavioral    [score]
+| Step | Skill |
+|---|---|
+| Data access and profiling | `explore-data` |
+| Ontology mapping | `ground-ontology` |
+| Chart planning | `plan-visualizations` |
+| Notebook creation | `create-marimo-report` |
 
-Select ontology for visualization planning.
-(default: recommended)
-```
+Paths:
+- **Overview** → `explore-data` → `ground-ontology --mode overview` → `plan-visualizations --mode overview` → `create-marimo-report --mode overview`
+- **In-Depth** → `explore-data` → `ground-ontology --mode in-depth` → `plan-visualizations --mode in-depth` → `create-marimo-report --mode in-depth`
+- **Standalone** → `create-marimo-report` directly (skips ontology + viz planning)
 
-If no candidates are valid, route to fallback summary.
+## Conciseness constraints
 
-### Phase 3A: Overview path
-
-1. **Visualization Planning Agent** (`plan-visualizations --mode overview`) using selected ontology.
-2. Auto-select 3-5 charts.
-3. Single confirmation: accept / switch to in-depth / reject all.
-
-Routing:
-- `model_tier`: `BALANCED`
-- `max_output_tokens`: `1,200`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: escalate to `DEEP` only if user explicitly requests deeper reasoning.
-- `caching_rule`: cache chart candidate set keyed by selected ontology + mode.
-
-### Phase 3B: In-depth path
-
-1. **Visualization Planning Agent** (`plan-visualizations --mode in-depth`) using selected ontology.
-2. Intent elicitation + chart proposal capped at 10.
-3. User confirms viz plan.
-
-Routing:
-- `model_tier`: `BALANCED`
-- `max_output_tokens`: `2,200`
-- `context_budget_strategy`: `evidence_pack`
-- `escalation_rule`: escalate to `DEEP` for unresolved multi-objective tradeoffs or explicit user request.
-- `caching_rule`: cache confirmed viz plan keyed by selected ontology + intent + mode.
-
-### Phase 4: Notebook generation + mandatory verification
-
-1. **Notebook Architecture Agent** (`create-marimo-report`) builds cell architecture from ontology + viz plan.
-2. **Notebook Formatting Agent** writes deterministic marimo-formatted output.
-3. **Mandatory verification**: notebook must run cleanly before iteration handoff.
-
-Routing:
-- Notebook Architecture Agent:
-  - `model_tier`: `DEEP`
-  - `max_output_tokens`: `1,800`
-  - `context_budget_strategy`: `evidence_pack`
-  - `escalation_rule`: single retry in `DEEP` with `full` context if architecture conflicts with chart or ontology constraints.
-  - `caching_rule`: cache notebook cell plan keyed by mode + ontology + viz plan hash.
-- Notebook Formatting Agent:
-  - `model_tier`: `FAST`
-  - `max_output_tokens`: `1,000`
-  - `context_budget_strategy`: `minimal`
-  - `escalation_rule`: escalate to `BALANCED` only for unresolved formatting contract errors.
-  - `caching_rule`: cache rendered notebook text keyed by architecture hash.
-
-## State machine transitions
-
-Shared front matter:
-- `S0 -> S1`: connect/profile complete.
-- `S1 -> S2`: mode selected.
-- `S2 -> S3`: evidence pack built.
-- `S3 -> S4`: parallel inference completed.
-- `S4 -> S5`: synthesis completed; candidate set produced.
-- `S5 -> S6`: ontology selected.
-
-Overview path:
-- `S6 -> O1`: overview viz proposed (`<=5`).
-- `O1 -> O2`: user decision checkpoint.
-- `O2(accept) -> O3`: overview notebook architecture.
-- `O3 -> O4`: formatting.
-- `O4 -> O5`: mandatory marimo verification.
-- `O5 -> done`.
-
-In-depth path:
-- `S6 -> D1`: in-depth viz proposed (`<=10`).
-- `D1 -> D2`: user confirmation.
-- `D2(confirmed) -> D3`: in-depth notebook architecture.
-- `D3 -> D4`: formatting.
-- `D4 -> D5`: mandatory marimo verification.
-- `D5 -> done`.
-
-Escalation transitions:
-- `O2(switch_to_in_depth) -> D1` using same selected ontology and cached evidence.
-- `any_step(low_confidence) -> same_step_escalated` via `FAST -> BALANCED -> DEEP`.
-- `Synthesis(unresolved_conflict) -> Synthesis_DEEP`.
-- `Viz or Notebook(user_requests_deeper_reasoning) -> DEEP variant`.
-
-Fallback transitions:
-- `S5(candidate_count=0) -> F1`.
-- `O2(reject_all) -> F1`.
-- `D2(reject_all) -> F1`.
-- `F1 -> fallback summary table + metric card -> done`.
-
-## Rules
-
-- Deterministic orchestrator remains the single state authority.
-- Every phase emits an artifact that gates the next phase.
-- Preserve choice architecture defaults and recommendation labels.
-- Overview cap: `<=5` charts. In-depth cap: `<=10` charts.
-- User may escalate overview -> in-depth at checkpoint. No in-depth -> overview downgrade mid-flow.
-- marimo verification remains mandatory before completion.
-- No autonomous recursive agent loops.
-- Agent fan-out remains small, role-specific, and orchestrator-controlled per effective-agent guidance.
-- Ontology remains grounded in https://dlthub.com/blog/ontology.
-
-## Failure handling
-
-- Connection failure -> re-prompt for pipeline name (once).
-- Ontology branch failure -> isolate branch; continue synthesis with remaining candidates.
-- All ontology candidates invalid -> fallback summary table + metric card.
-- All charts rejected -> fallback summary table + metric card.
-- marimo capability missing for custom widget -> drop that chart and disclose removal.
+- Planner output: max 10 bullets.
+- Summaries: max 6 bullets per phase.
+- No schema restatement or raw data dumps in conversational output.
+- Present one decision point at a time, with a recommended default.

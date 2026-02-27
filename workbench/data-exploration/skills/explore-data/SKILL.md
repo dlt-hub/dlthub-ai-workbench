@@ -1,6 +1,6 @@
 ---
 name: explore-data
-description: Query, explore, or view data loaded by a dlt pipeline using Python. Use when the user asks to query data, explore loaded tables, check row counts, write Python that reads pipeline data, or asks questions like "show me the data", "what did we load". Covers dlt dataset API, ibis expressions, and ReadableRelation.
+description: Query, explore, or view data loaded by a dlt pipeline using Python. Use when the user asks to query data, explore loaded tables, check row counts, write Python that reads pipeline data, or asks questions like "show me the data", "what did we load", "how many rows", "what tables do we have". Also use when the user wants to profile data, check data quality, or understand what a pipeline loaded — even if they don't say "explore" explicitly.
 ---
 
 # Explore pipeline data
@@ -11,24 +11,16 @@ Parse `$ARGUMENTS`:
 - `pipeline-name` (optional): the dlt pipeline name. If omitted, infer from session context. If ambiguous, ask the user and stop.
 - `hints` (optional, after `--`): additional requirements or focus areas (e.g., `-- show spending by model`)
 
-## Model routing and token policy
+## Pipeline targeting
 
-Use explicit routing metadata for deterministic execution:
+Before doing anything, you need to know which pipeline to work with:
+- Ask for the exact pipeline name if unclear.
+- Also ask for the pipeline path if the workspace has multiple pipeline roots or non-default locations.
+- If either is ambiguous, stop and clarify before continuing.
 
-- `model_tier`: `FAST`
-- `max_output_tokens`: `1200`
-- `context_budget_strategy`: `minimal`
-- `escalation_rule`: escalate to `BALANCED` only if pipeline ambiguity remains after one clarification.
-- `caching_rule`: cache profile digest by `pipeline_name + schema_hash`.
+## Quick look: Workspace Dashboard
 
-Token budget guidance:
-- connection/profile summary + row counts: `<= 900`
-- path-selection prompt: `<= 300`
-
-## Workspace Dashboard UI if just exploring
-
-Tell the user to run Workspace Dashboard **if no precise query or instructions were given**, this
-assumes user wants to just look at the data. Otherwise
+If the user just wants to look around without a specific query, tell them to run:
 ```
 dlt pipeline <pipeline_name> show
 ```
@@ -36,64 +28,44 @@ This opens a browser with table schemas, row counts, and sample data.
 
 ## dlt dataset API
 
-**Essential Reading:**
-- `https://dlthub.com/docs/general-usage/dataset-access/dataset.md`
-- `https://dlthub.com/docs/general-usage/dataset-access/ibis-backend.md`
+Full API reference is in the `dlt-relation-api` rule (loaded every session). Quick summary below.
 
-Use `pipeline.dataset()` to access loaded data. This is **destination agnostic** — works the same on duckdb, postgres, bigquery, etc. NEVER import destination libraries (like `duckdb`) directly.
-
-### Attach to pipeline and get dataset
 ```python
 import dlt
 pipeline = dlt.attach("<pipeline_name>")
 dataset = pipeline.dataset()
-```
 
-### ReadableRelation (dlt native)
-Think about it as a subset of ibis with slightly different syntax.
-```python
+# Relation: lazy, chainable, destination-agnostic
 table = dataset["my_table"]
-table.head().df()                              # first rows as pandas
-table.select("id", "name").limit(50).arrow()   # select columns, arrow format
-table.where("id", "in", [1, 2, 3]).df()        # parametric filter
-table.select("amount").max().fetchscalar()      # scalar aggregate
-dataset.row_counts().df()                       # row counts for all tables
-```
+table.select("id", "name").where("amount", "gt", 100).limit(50).df()
+table.select("amount").max().fetchscalar()
+dataset.row_counts().df()
 
-### Ibis expressions (preferred for complex queries)
-```python
+# Escalate to ibis for joins, group-by, computed columns
 t = dataset["my_table"].to_ibis()
 expr = t.filter(t.amount > 100).group_by("category").aggregate(total=t.amount.sum())
-dataset(expr).df()  # execute ibis expression via dataset
-```
+dataset(expr).df()
 
-Ibis is lazy, composable, and destination agnostic. Key operations:
-- `table.group_by("col").aggregate(total=table.col.sum())` — aggregation
-- `table.filter(table.col > 0)` — filtering
-- `table.join(other, table.id == other.parent_id)` — joins
-- `table.order_by(ibis.desc("col"))` — sorting
-- `table.mutate(new_col=table.col * 100)` — computed columns
-- `table.select("col1", "col2")` — column selection
-
-Read ibis docs: `https://ibis-project.org/reference/expression-collections`
-
-### Joining parent/child tables
-
-dlt creates child tables for nested data (e.g., `my_table__results`). Join on `_dlt_id` / `_dlt_parent_id`:
-```python
+# Parent/child joins (dlt nested data)
 parent = dataset["my_table"].to_ibis()
 child = dataset["my_table__results"].to_ibis()
 joined = parent.join(child, parent._dlt_id == child._dlt_parent_id)
-```
 
-### Raw SQL (when needed)
-```python
+# Raw SQL escape hatch
 dataset("SELECT * FROM my_table WHERE amount > 100").df()
 ```
 
-## Next steps
+Priority: Relation first → ibis for complex queries → raw SQL as last resort. Never import destination libraries directly.
 
-After profiling, present path selection (see `rules/workflow.md`):
+## Entry mode detection
+
+Classify the user's request to decide what happens next:
+- **Intent-driven** (dashboard, metric, hypothesis, EDA goal): Skip the overview prompt. Proceed to planning — restate their intent, identify entities/grain/metrics, narrow to relevant tables, then hand off to `ground-ontology`.
+- **Exploratory** (just wants to look around): Offer the choice below.
+
+## Exploration paths
+
+After profiling, present the path selection:
 
 ```
 How would you like to explore this data?
@@ -105,37 +77,40 @@ How would you like to explore this data?
    Full ontology mapping, business intent, up to 10 interactive charts.
 ```
 
-- Default selection remains `Overview`.
-- Preserve recommendation label and choice architecture.
-- Emit `mode: overview | in-depth` for deterministic gating.
+Default: Overview.
 
-## Required artifact output
+## Parallel profiling
 
-When used in workflow mode, emit the compact `evidence_pack` artifact for downstream BALANCED/DEEP agents:
+When multiple tables are in scope (3+), profile them in parallel using haiku subagents. Spawn one per table in the **same message**:
 
 ```
-evidence_pack:
-  schema_excerpt:
-    tables: list[str]
-    key_edges: list[{from_table, from_col, to_table, to_col}]
-    child_edges: list[{parent_table, child_table, parent_key, child_key}]
-  summary_stats:
-    row_counts: list[{table, rows}]
-    cardinality_notes: list[str]
-    null_rate_notes: list[str]
-    temporal_ranges: list[{table, column, min, max}] | []
-  anomaly_flags: list[str]
-  user_responses_compressed:
-    mode_rationale: str
-    constraints: list[str]
-  mode: overview | in-depth
+Profile this dlt table and return structured stats.
+
+Table: [table_name]
+Schema: [column names, types]
+Sample (first 5 rows): [paste sample]
+
+Return: row count, per-column cardinality, null rate, min/max for numeric/temporal,
+any anomalies (>50% null, single-value, suspicious distributions).
+No prose — structured output only.
 ```
 
-Rules:
-- Include only relevant schema excerpts, not full dumps.
-- Include only key summary statistics needed for ontology and visualization planning.
-- Keep user responses compressed and deterministic.
+Collect the results and assemble the evidence summary. For 1-2 tables, just profile inline — the subagent overhead isn't worth it.
 
-- **Overview** → `ground-ontology --mode overview` (bounded parallel A/B/C ontology inference + synthesis + selection) → `plan-visualizations --mode overview` → `create-marimo-report --mode overview`
-- **In-Depth** → `ground-ontology --mode in-depth` (bounded parallel A/B/C ontology inference + synthesis + selection) → `plan-visualizations --mode in-depth` → `create-marimo-report --mode in-depth`
+## What to gather before handing off
+
+When feeding into the workflow (ground-ontology → plan-visualizations → create-marimo-report), make sure you've established:
+
+- **Schema excerpt**: tables involved, key relationships (foreign keys, parent/child edges)
+- **Summary stats**: row counts, cardinality notes, null rates, temporal ranges
+- **Anomaly flags**: anything surprising in the data
+- **User context**: their chosen mode (overview/in-depth), any constraints they mentioned
+- **Plan** (intent mode): restated intent, entities, grain, metrics, dimensions, candidate tables
+
+Narrow to relevant tables before gathering any of this — don't profile the entire database.
+
+## Next steps
+
+- **Overview** → `ground-ontology --mode overview` → `plan-visualizations --mode overview` → `create-marimo-report --mode overview`
+- **In-Depth** → `ground-ontology --mode in-depth` → `plan-visualizations --mode in-depth` → `create-marimo-report --mode in-depth`
 - **Standalone** → use `create-marimo-report` directly (skips ontology + viz planning)
