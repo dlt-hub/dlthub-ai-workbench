@@ -1,6 +1,6 @@
 ---
 name: setup-secrets
-description: Use to access and modify *.secrets.toml in SAFE way. Use when need to set up, check, verify, debug, or read dlt secrets (API keys, database credentials). Also use when writing Python code that needs credentials.
+description: Safely manage dlt secrets in *.secrets.toml. Use when the user directly asks to set up, configure, or inspect credentials (API keys, database passwords, tokens). Also use when writing Python code that needs to read secrets via dlt.secrets without exposing values. Do NOT use for pipeline creation, source discovery, or debugging pipeline execution — those skills call setup-secrets when they need credentials configured.
 argument-hint: "[source-name]"
 ---
 
@@ -8,7 +8,11 @@ argument-hint: "[source-name]"
 
 **Essential Reading** Credentials & config resolution: `https://dlthub.com/docs/general-usage/credentials/setup.md` `https://dlthub.com/docs/general-usage/credentials/advanced`
 
-Configure credentials in `.dlt/secrets.toml`. **Never read secrets files directly** — use only `dlt ai secrets` CLI commands.
+Configure credentials in `.dlt/secrets.toml`. **Never read secrets files directly** — use `dlt-workspace-mcp` tools or `dlt ai secrets` CLI commands.
+
+**Prefer MCP** — use `secrets_list`, `secrets_view_redacted`, `secrets_update_fragment` tools from `dlt-workspace-mcp`.
+
+**CLI fallback**: If MCP is not connected, see [cli-reference.md](cli-reference.md) for equivalent `dlt ai secrets` commands.
 
 **Read additional docs as needed:**
 - Connection string credentials (databases, warehouses): `https://dlthub.com/docs/general-usage/credentials/complex_types.md`
@@ -29,30 +33,16 @@ If called standalone (e.g. user says "set up secrets" or hit `ConfigFieldMissing
 
 ## 2. Find the right secrets file and inspect its shape
 
-```
-dlt ai secrets list
-```
+Use `secrets_list` to list workspace-scoped secrets files. Profile-scoped files (e.g. `.dlt/dev.secrets.toml`) appear first — **use those when present**, fall back to `.dlt/secrets.toml` otherwise.
 
-Lists workspace-scoped secrets files. Profile-scoped files (e.g. `.dlt/dev.secrets.toml`) appear first — **use those when present**, fall back to `.dlt/secrets.toml` otherwise.
+**Pick the target file** from the list — you will pass it as `path` to `secrets_update_fragment` in step 4.
 
-**Pick the target file** from the list — you will pass it as `--path` to `update-fragment` in step 4.
+Then use `secrets_view_redacted` (no `path` argument) to see the **unified merged** view with values replaced by `***`. To inspect a specific file, pass `path=".dlt/<profile>.secrets.toml"`.
 
-Then inspect the current content:
-
-```
-dlt ai secrets view-redacted
-```
-
-Shows the **unified merged** view of all workspace secret files with values replaced by `***`. Use it to see:
+Look for:
 - Which sections already exist (`[sources.<name>]`, `[destination.<name>]`)
 - Which fields have real values (stars) vs placeholders (`<configure me>`)
 - Whether the layout matches what the pipeline expects
-
-To inspect a specific file instead (profile and workspace scoped):
-```
-dlt ai secrets view-redacted --path .dlt/<profile>.secrets.toml
-dlt ai secrets view-redacted --path .dlt/secrets.toml
-```
 
 Skip this step if you already know the secrets file is empty or doesn't exist.
 
@@ -63,11 +53,11 @@ Before asking the user for values:
 - Tell the user exactly what they need and where to get it (e.g. "Go to https://dashboard.stripe.com/apikeys")
 - Explain what each credential field is for
 
-## 4. Write secrets with `update-fragment`
+## 4. Write secrets
 
-`dlt ai secrets update-fragment --path <file>` merges a TOML fragment into the given secrets file. It creates the file if needed, deep-merges without overwriting other sections, and prints the redacted result.
+Use `secrets_update_fragment` with `fragment` (TOML string) and `path` (target file from step 2). Creates the file if needed, deep-merges without overwriting other sections, returns the redacted result.
 
-**`--path` is required** — use the target file you picked in step 2.
+**CRITICAL: Only write placeholders** — never pass actual secret values through `secrets_update_fragment` or any other tool. The user fills in real values themselves by editing the file directly.
 
 ### Layout rules
 
@@ -97,52 +87,9 @@ Use **meaningful placeholders** that hint at the format:
 
 **Never** use the generic `"<configure me>"`.
 
-### Examples (Linux / macOS)
-
-Use multiline single-quoted strings — all POSIX shells (bash, zsh, sh, dash, fish) pass real newlines:
-
-```sh
-dlt ai secrets update-fragment --path .dlt/secrets.toml '[sources.stripe]
-api_key = "sk-test-xxxxxxxxxxxx"
-'
-```
-
-```sh
-dlt ai secrets update-fragment --path .dlt/secrets.toml '[destination.postgres.credentials]
-host = "localhost"
-port = 5432
-database = "analytics"
-username = "loader"
-password = "<paste-your-password-here>"
-'
-```
-
-Profile-scoped:
-```sh
-dlt ai secrets update-fragment --path .dlt/<profile>.secrets.toml '[sources.my_api]
-api_key = "sk-xxxxxxxxxxxx"
-'
-```
-
-### Examples (Windows)
-
-Use `\n` for newlines in a single-line string. The CLI converts literal `\n` to real newlines before parsing:
-
-```
-dlt ai secrets update-fragment --path .dlt/secrets.toml "[sources.stripe]\napi_key = \"sk-test-xxxxxxxxxxxx\""
-```
-
-```
-dlt ai secrets update-fragment --path .dlt/secrets.toml "[destination.postgres.credentials]\nhost = \"localhost\"\nport = 5432\ndatabase = \"analytics\"\nusername = \"loader\"\npassword = \"<paste-your-password-here>\""
-```
-
 ## 5. Verify
 
-```
-dlt ai secrets view-redacted
-```
-
-Shows the unified merged view across all workspace secret files. Tell the user which fields still have placeholders and how to obtain real values.
+Use `secrets_view_redacted` to see the unified merged view across all workspace secret files. Tell the user which fields still have placeholders and how to obtain real values.
 
 
 ## 6. Use secrets in Python
@@ -170,3 +117,4 @@ creds = dlt.secrets.get("destination.bigquery.credentials", GcpServiceAccountCre
 ```
 
 **Reference**: https://dlthub.com/docs/general-usage/credentials/advanced.md#access-configs-and-secrets-in-code
+

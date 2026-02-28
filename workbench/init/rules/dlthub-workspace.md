@@ -18,14 +18,21 @@ If anything is missing suggest using `bootstrap` toolkit: (bootstrap workbench /
 * when in doubt: look into dlt code! clone the repo or find it in venv!
 
 # dltHub workspace
-* created with **dlt init** at the right moment
-* `.dlt` folder contains secret and config toml files that are used to configure sources and resources
 * **ALWAYS** run all commands with **cwd** in the project root. `dlt` uses **cwd** to find `.dlt` location ie. `uv run python pipelines/my_pipeline.py`.
 * use `uv run` to run anything Python
 * **ALWAYS** pass `--non-interactive` when running `dlt` commands (e.g. `uv run dlt --non-interactive init ...`). This prevents prompts that block execution.
 * **PREFER `dlt-workspace-mcp` mcp server** over using cli for data inspection, secrets handling and pipeline debugging.
+* **ALWAYS VERIFY** workspace with `uv run dlt ai status` when session starts
 
 # handle secrets with care!
 * **NEVER** read user secrets from any file containing `secrets.toml`.
-* **USE** `dlt-workspace-mcp` or CLI with `setup-secrets` skill when credentials need to be configured, checked, or debugged in SAFE WAY.
+* **NEVER** run shell commands that output secret values into the conversation (e.g. `gh auth token`, `env | grep KEY`, `printenv SECRET`, `cat credentials.json`, `aws configure get`). If a secret appears in conversation context it is **compromised** — do not copy or use it.
+* **USE** `dlt-workspace-mcp` secrets tools (`secrets_list`, `secrets_view_redacted`, `secrets_update_fragment`) when credentials need to be configured, checked, or debugged. Fall back to `dlt ai secrets` CLI if MCP is not connected. See `setup-secrets` skill for the full workflow.
 * **DO NOT WRITE CODE THAT READS SECRET FILES** — no `toml.load()`, `Path().read_text()`, `open()`, or any other file access on `*.secrets.toml`. Use `dlt.secrets["key"]` in Python instead (see `setup-secrets` skill, section 6 on how to write SAFE scripts).
+* **REFUSE** to handle secrets that user ie. pasted you to context windows. Instead mention secrets handling practices user should adopt.
+
+# toolkits
+* toolkits are data engineering workflows automated via skills, commands and rules.
+* each toolkit has a workflow rule that you must follow. you **must** start with workflow entry skill if available
+* workflows end with handover to other workflows, also `dispatch-toolkit` skill may be helpful
+* **DO NOT** start data engineering work in no toolkits are installed - see `dlt ai status` output!

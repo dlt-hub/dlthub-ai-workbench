@@ -140,15 +140,14 @@ def my_source(
 base_url = "https://api.example.com/v1/"
 ```
 
-**Secrets** (API keys, tokens, passwords): **never** read or write `secrets.toml` directly.
-- `dlt ai secrets view-redacted` — inspect unified merged view of all secrets
-- `dlt ai secrets update-fragment --path <file>` — add or update credentials (`--path` is required)
+**Secrets** (API keys, tokens, passwords): **never** read or write `secrets.toml` directly.  **Never** run commands that output secret values (e.g. `gh auth token`, `env | grep KEY`).
 
-Run `dlt ai secrets list` first to pick the target file, then:
-```
-dlt ai secrets update-fragment --path .dlt/secrets.toml '[sources.<name>]
+Use `secrets_view_redacted`, `secrets_list`, and `secrets_update_fragment` MCP tools (or equivalent `dlt ai secrets` CLI commands) — see `setup-secrets` skill for details.
+
+Use `secrets_list` to pick the target file, then `secrets_update_fragment` with the TOML fragment:
+```toml
+[sources.<name>]
 access_token = "ak-*******-cae"
-'
 ```
 - `<name>` = `name=` arg on `@dlt.source` if set; otherwise the function name
 - Use meaningful placeholders that hint at format (not generic `<configure me>`)

@@ -8,6 +8,5 @@
   "homepage": "https://dlthub.com/docs",
   "repository": "https://github.com/dlt-hub/dlthub-ai-workbench",
   "license": "ELv2",
-  "keywords": ["dlt", "marimo", "ibis", "data-exploration"],
-  "dependencies": ["init"]
+  "keywords": ["dlt", "marimo", "ibis", "data-exploration"]
 }

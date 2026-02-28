@@ -8,6 +8,5 @@
   "homepage": "https://dlthub.com/docs",
   "repository": "https://github.com/dlt-hub/dlthub-ai-workbench",
   "license": "ELv2",
-  "keywords": ["dlthub", "workspace", "prepare"],
-  "dependencies": ["init"]
+  "keywords": ["dlthub", "workspace", "prepare"]
 }
