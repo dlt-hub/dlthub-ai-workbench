@@ -58,9 +58,7 @@ def ws_name_for(eval_dir: Path, workspace_id: str) -> str:
     return str(rel).replace("/", "--").replace("\\", "--") + "--" + workspace_id
 
 
-def create_single_workspace(
-    workspace: Path, dlt_pkg: str, toolkits: list[str]
-) -> Path:
+def create_single_workspace(workspace: Path, dlt_pkg: str, toolkits: list[str]) -> Path:
     """Create a single eval workspace."""
     if workspace.exists():
         shutil.rmtree(workspace)
@@ -91,8 +89,16 @@ def create_single_workspace(
         print(f"  Installing toolkit: {toolkit}")
         run(
             [
-                "uv", "run", "dlt", "--non-interactive",
-                "ai", "toolkit", toolkit, "install", "--agent", "claude",
+                "uv",
+                "run",
+                "dlt",
+                "--non-interactive",
+                "ai",
+                "toolkit",
+                toolkit,
+                "install",
+                "--agent",
+                "claude",
             ],
             cwd=workspace,
         )

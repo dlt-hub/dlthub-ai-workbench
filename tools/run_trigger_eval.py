@@ -51,7 +51,10 @@ def find_workspace(eval_dir: Path, ws_id: str) -> Path:
     ws = EVALS_DIR / name
     if not ws.is_dir():
         print(f"ERROR: Workspace not found: {ws}", file=sys.stderr)
-        print(f"Run: uv run python tools/create_eval_workspace.py {eval_dir.relative_to(ROOT)}", file=sys.stderr)
+        print(
+            f"Run: uv run python tools/create_eval_workspace.py {eval_dir.relative_to(ROOT)}",
+            file=sys.stderr,
+        )
         sys.exit(1)
     return ws
 
@@ -65,8 +68,10 @@ def run_single_query(
     """Run a query via claude -p. Return the skill name that triggered, or None."""
     cmd = [
         "claude",
-        "-p", query,
-        "--output-format", "stream-json",
+        "-p",
+        query,
+        "--output-format",
+        "stream-json",
         "--verbose",
         "--include-partial-messages",
         "--no-session-persistence",
@@ -172,6 +177,7 @@ def _extract_skill_name(json_fragment: str) -> str | None:
     except json.JSONDecodeError:
         # Partial JSON — look for "skill":"<name>" pattern
         import re
+
         m = re.search(r'"skill"\s*:\s*"([^"]+)"', json_fragment)
         return m.group(1) if m else None
 
@@ -258,8 +264,9 @@ def run_eval_on_workspace(
     # Compute metrics
     tp = sum(1 for r in results if r["should_trigger"] and r["trigger_rate"] >= trigger_threshold)
     fn = sum(1 for r in results if r["should_trigger"] and r["trigger_rate"] < trigger_threshold)
-    tn = sum(1 for r in results if not r["should_trigger"] and r["trigger_rate"] < trigger_threshold)
-    fp = sum(1 for r in results if not r["should_trigger"] and r["trigger_rate"] >= trigger_threshold)
+    fp = sum(
+        1 for r in results if not r["should_trigger"] and r["trigger_rate"] >= trigger_threshold
+    )
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else 1.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 1.0
@@ -282,12 +289,31 @@ def run_eval_on_workspace(
 
 def main():
     parser = argparse.ArgumentParser(description="Run trigger evaluation for a skill")
-    parser.add_argument("eval_dir", help="Path to eval directory (e.g. evals/init/toolkit-dispatch)")
+    parser.add_argument(
+        "eval_dir", help="Path to eval directory (e.g. evals/init/toolkit-dispatch)"
+    )
     parser.add_argument("--workspace", default=None, help="Run only this workspace (default: all)")
-    parser.add_argument("--num-workers", type=int, default=10, help="Parallel workers (default: 10)")
-    parser.add_argument("--timeout", type=int, default=60, help="Timeout per query in seconds (default: 60)")
-    parser.add_argument("--runs-per-query", type=int, default=1, help="Runs per query (default: 1)")
-    parser.add_argument("--trigger-threshold", type=float, default=0.5, help="Trigger rate threshold (default: 0.5)")
+    parser.add_argument(
+        "--num-workers", type=int, default=10, help="Parallel workers (default: 10)"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=60,
+        help="Timeout per query in seconds (default: 60)",
+    )
+    parser.add_argument(
+        "--runs-per-query",
+        type=int,
+        default=1,
+        help="Runs per query (default: 1)",
+    )
+    parser.add_argument(
+        "--trigger-threshold",
+        type=float,
+        default=0.5,
+        help="Trigger rate threshold (default: 0.5)",
+    )
     parser.add_argument("--model", default=None, help="Model override")
     parser.add_argument("--verbose", action="store_true", help="Print progress to stderr")
     args = parser.parse_args()
@@ -352,15 +378,21 @@ def main():
 
         if args.verbose:
             s = output["summary"]
-            print(f"Results: {s['passed']}/{s['total']} passed  "
-                  f"precision={s['precision']}  recall={s['recall']}  "
-                  f"clashes={s['clashes']}", file=sys.stderr)
+            print(
+                f"Results: {s['passed']}/{s['total']} passed  "
+                f"precision={s['precision']}  recall={s['recall']}  "
+                f"clashes={s['clashes']}",
+                file=sys.stderr,
+            )
             for r in output["results"]:
                 status = "PASS" if r["pass"] else "FAIL"
                 rate_str = f"{r['triggers']}/{r['runs']}"
                 clash_str = f" CLASH→{r['clashes']}" if r.get("clashes") else ""
-                print(f"  [{status}] rate={rate_str} expected={r['should_trigger']}{clash_str}: "
-                      f"{r['query'][:80]}", file=sys.stderr)
+                print(
+                    f"  [{status}] rate={rate_str} expected={r['should_trigger']}{clash_str}: "
+                    f"{r['query'][:80]}",
+                    file=sys.stderr,
+                )
 
         all_results.append(output)
 

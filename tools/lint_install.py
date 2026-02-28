@@ -23,9 +23,7 @@ def get_toolkit_names() -> list[str]:
 
 def run_dlt(args: list[str], cwd: Path) -> tuple[bool, str]:
     cmd = ["uv", "run", "dlt", "--non-interactive"] + args
-    result = subprocess.run(
-        cmd, cwd=cwd, capture_output=True, text=True, timeout=120
-    )
+    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=120)
     output = result.stdout + result.stderr
     return result.returncode == 0, output
 
@@ -57,9 +55,14 @@ def main() -> int:
                 total += 1
                 ok, output = run_dlt(
                     [
-                        "ai", "toolkit", name, "install",
-                        "--agent", agent,
-                        "--location", location,
+                        "ai",
+                        "toolkit",
+                        name,
+                        "install",
+                        "--agent",
+                        agent,
+                        "--location",
+                        location,
                         "--overwrite",
                         "--strict",
                     ],
@@ -77,7 +80,9 @@ def main() -> int:
             print(f"\n  {e}")
         return 1
     else:
-        print(f"All {total} installs passed ({len(AGENTS)} agents x {len(toolkits)} toolkits + init)")
+        print(
+            f"All {total} installs passed ({len(AGENTS)} agents x {len(toolkits)} toolkits + init)"
+        )
         return 0
 
 

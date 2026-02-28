@@ -19,7 +19,7 @@ from pathlib import Path
 
 def parse_frontmatter(path: Path) -> dict:
     """Extract YAML-like frontmatter from a markdown file."""
-    text = path.read_text()
+    text = path.read_text(encoding="utf-8")
     match = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
     if not match:
         return {}
@@ -33,7 +33,7 @@ def parse_frontmatter(path: Path) -> dict:
 
 def find_skills(path: Path) -> list[dict]:
     """Find all skills under a path (toolkit dir or eval workspace)."""
-    results = []
+    results: list[dict[str, str]] = []
 
     # Check if it's an eval workspace (.claude/skills/)
     claude_skills = path / ".claude" / "skills"
@@ -65,7 +65,9 @@ def find_skills(path: Path) -> list[dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="List skill descriptions from toolkits or eval workspaces")
+    parser = argparse.ArgumentParser(
+        description="List skill descriptions from toolkits or eval workspaces"
+    )
     parser.add_argument("paths", nargs="+", help="Toolkit dirs or eval workspace dirs")
     parser.add_argument("--json", action="store_true", dest="as_json", help="Output as JSON")
     args = parser.parse_args()
