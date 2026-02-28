@@ -93,24 +93,24 @@ graph TB
 | Toolkit | Description | Components |
 |---------|-------------|------------|
 | **rest-api-pipeline** | End-to-end REST API ingestion | 8 skills, workflow, MCP |
-| **dlthub-runtime** | Deploy pipelines to dltHub platform | 2 skills, workflow, rules |
+| **dlthub-runtime** | Deploy pipelines to dltHub platform | 4 skills, workflow, rules |
 | **data-exploration** | Interactive data analysis and reporting | 2 skills |
 | **bootstrap** | Cold-start environment setup | 1 command |
 | **init** | Shared rules, secrets handling, workspace MCP | installed by `dlt ai init` |
 
 ### rest-api-pipeline workflow
 
-The workflow guides the agent through a complete pipeline build:
+Each toolkit workflow has an **entry skill** where it MUST start. The entry skill can be triggered explicitly (`/find-source`) or by low-intent user messages matching the skill description (e.g. "I want to load data from Stripe").
 
 | Step | Skill | What it does |
 |------|-------|-------------|
-| 0 | `find-source` | Discover a dlt source for your API |
+| **entry** | `find-source` | **Start here.** Discover a dlt source for your API |
 | 1 | `create-rest-api-pipeline` | Scaffold pipeline code and configure credentials |
 | 2 | `debug-pipeline` | Run, inspect traces and load packages, fix errors |
 | 3 | `validate-data` | Check schema and data, fix types and structures |
-| 4 | `adjust-endpoint` | Production-ready: pagination, incremental loading, schema hints |
-| 5 | `new-endpoint` | Add more API endpoints to the pipeline |
-| 6 | `view-data` | Query and explore loaded data |
+| 4+ | `adjust-endpoint`, `new-endpoint`, `view-data` | Extend: pagination, incremental loading, more endpoints, data queries |
+
+When the user's needs go beyond the toolkit, the workflow hands over to **data-exploration** or **dlthub-runtime**.
 
 ### data-exploration skills (WIP!)
 
@@ -128,6 +128,7 @@ When you use this option, toolkits become part of your workspace so **you can cu
 as our verified sources.
 
 ```bash
+dlt ai status                                  # show AI setup status: version, agent, toolkits
 dlt ai init                                    # set up agent support
 dlt ai toolkit list                            # list available toolkits
 dlt ai toolkit <name> info                     # show toolkit contents
@@ -139,7 +140,11 @@ dlt ai mcp run [--stdio | --sse] [--features ...]
 dlt ai mcp install [--agent] [--features ...] [--name]
 ```
 
-Agent auto-detection and install paths:
+#### Agent auto-detection
+
+`dlt ai init` and `dlt ai toolkit install` auto-detect your coding agent from environment variables, project files, and global config directories. If exactly one agent is detected, it's used automatically. If multiple are found, you'll be asked to pass `--agent` explicitly.
+
+#### Install paths
 
 | | Claude Code | Cursor | Codex |
 |---|---|---|---|
@@ -161,9 +166,9 @@ This is the easiest path for Claude Code users who want to get started without t
 
 ### MCP server
 
-Toolkits that need data access use the **dlt MCP server** — a read-only interface to your pipelines and destinations, installed automatically with each toolkit.
+Toolkits use the **dlt MCP server** for data access, secrets management, and workspace inspection — installed automatically with each toolkit.
 
-The MCP server uses a pluggy-based feature system. The `workspace` and `pipeline` features are built into dlt. External packages (like `dlt-mcp`) can add more features (e.g. `search-docs`) via `plug_mcp` hookimpls — see [dlt-mcp#30](https://github.com/dlt-hub/dlt-mcp/issues/30).
+Built-in features: `workspace` (pipeline discovery, workspace info), `pipeline` (table inspection, SQL queries, schema), `secrets` (list, view-redacted, update), `toolkit` (list, info). External packages can add more via `plug_mcp` hookimpls.
 
 ## Add and maintain Toolkits
 See [CLAUDE](CLAUDE.md)
