@@ -14,7 +14,7 @@ lint = [
 ]
 
 [tool.uv.sources]
-dlthub = { path = "../dlt", editable = true }
+dlt = { git = "https://github.com/dlt-hub/dlt", branch = "feat/ai-workbench-support" }
 
 [tool.ruff]
 preview = true

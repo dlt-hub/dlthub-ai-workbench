@@ -1,7 +1,7 @@
 .PHONY: dev validate-toolkits lint lint-ruff lint-mypy format format-fix lint-install
 
 dev:
-	uv sync --group lint --prerelease=explicit
+	uv sync --group lint --reinstall-package dlt
 
 validate-toolkits:
 	uv run python tools/validate_toolkits.py
