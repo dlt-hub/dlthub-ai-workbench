@@ -52,10 +52,11 @@ uv venv
 
 **Install dlt** (if missing or outdated):
 ```
-uv pip install --upgrade --pre dlt[workspace]
+uv pip install --upgrade dlt[workspace]==1.23.0a1
 ```
 
-This installs (or upgrades) dlt with marimo, ibis, and other workspace tools. `--pre` allows alpha/pre-release versions.
+This installs (or upgrades) dlt with marimo, ibis, and other workspace tools.
+**Note**: - if adding `dlt` to `pyproject.toml` you must pin the exact installed version (`==`) — `uv add` may downgrade pre-release versions
 
 ## Phase 4: AI init
 

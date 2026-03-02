@@ -31,7 +31,7 @@
       "description": "Explore, analyze, and visualize data loaded by dlt pipelines. Query with ibis, map business ontologies, plan charts, and generate interactive marimo notebooks.",
       "version": "0.2.0",
       "category": "data",
-      "tags": ["dlt", "marimo", "ibis", "data-exploration", "dashboards", "altair"]
+      "tags": ["dlt", "marimo", "ibis", "data-exploration", "dashboards", "EDA"]
     }
   ]
 }
