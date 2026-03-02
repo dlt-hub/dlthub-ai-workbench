@@ -6,8 +6,8 @@
 [Entry Mode Detection]
   -> intent-driven -> [Intent Planning] -> [Scoped Data Narrowing]
   -> exploratory   -> [Overview/In-Depth Selection]
-  -> [Evidence Gathering: schema + profiling + ontology hypotheses]
-  -> [Synthesis + Ontology Selection]
+  -> [Evidence Gathering: schema + profiling]
+  -> [Ontology Interview: user defines domain, entities, metrics, grain]
   -> [Visualization Planning + Sanity Check]
   -> [Notebook Generation + Mandatory marimo Verification]
 ```
@@ -83,46 +83,25 @@ Collect these concrete facts for the next steps:
 
 ## Ontology grounding
 
-Using the available tables, relationships, and observed data patterns, generate **exactly three ontology hypotheses**. Each hypothesis should organize the schema into meaningful business concepts, but from a distinct modeling perspective:
+Build the ontology by interviewing the user about their business domain using `AskUserQuestion`. The user knows their data better than any schema inference — ask them what it means, then formalize the answers.
 
-### A. Operational Perspective  
-Model the data around real-world processes and execution flows (e.g., events, transactions, system actions). Emphasize traceability, operational monitoring, and near-real-time actionability.
-
-### B. Analytical (Dimensional) Perspective  
-Structure the data into stable facts and dimensions suitable for aggregation, reporting, and dashboarding. Emphasize metric consistency, grain clarity, and long-term analytical stability.
-
-### C. Behavioral / Causal Perspective  
-Organize entities around user or system behaviors and plausible drivers. Highlight patterns, sequences, and relationships that could support experimentation, attribution, or causal analysis.
-
----
-
-### For Each Hypothesis
-
-- Clearly define core entities and their relationships  
-- Specify the grain of key datasets  
-- Identify primary metrics the model enables  
-- State key modeling assumptions  
-
----
-
-### Numeric scoring
-
-Score each hypothesis 1–5 on these criteria (max 25):
-
-- **Coverage** (1–5): how much of the relevant schema does it explain?
-- **Join quality** (1–5): are relationships clean 1:many with clear keys?
-- **Metric usability** (1–5): are proposed metrics aggregable at the declared grain?
-- **Temporal fitness** (1–5): does the temporal column match the requested grain?
-- **Semantic coherence** (1–5): does it model business reality or just mirror schema structure?
-
-Sum the scores. Recommend the highest scorer. If tied, prefer the one that better matches the user's stated intent. Include the scorecard so the user can see the reasoning.
-
----
-
-### Selection
-
-Present the choice using `AskUserQuestion`, listing the three ontology options as selectable toggles (recommended option first with its score), so the user can choose directly rather than typing a response.
 Reference: https://dlthub.com/blog/ontology — start from what the business cares about, then map tables to it.
+
+### Interview steps
+
+Use `AskUserQuestion` with toggle options at every step. Infer concrete options from the schema evidence.
+
+1. **Business domain** — present 2–4 inferred domain labels. "What does this data represent?"
+2. **Core entity** — present tables with row counts. "Which table is your main focus?" The selected table becomes the fact table.
+3. **Key metrics** — present numeric columns from the fact table (multiSelect). "Which numbers matter?"
+4. **Primary dimension + temporal grain** — batch two questions: how to slice the data, and what time granularity.
+5. **Relationship confirmation** — present detected joins with business verbs (multiSelect). "Which relationships are relevant?"
+
+In **overview mode**, compress to one question: confirm the fact table + primary metric + temporal grain. Auto-select everything else.
+
+### Final confirmation
+
+Present a 3–6 bullet summary of the assembled ontology and ask: "Does this capture your data correctly?" with options to proceed or adjust.
 
 ## Visualization planning
 
@@ -170,7 +149,7 @@ Use the Task tool to run independent work in parallel and route cheaper tasks to
 
 **Evidence gathering** (in `ground-ontology`): Spawn schema analysis and data profiling as two parallel haiku subagents. Both read the same scoped table list and return structured summaries.
 
-**Data reading options** (in `ground-ontology`): For complex schemas (>5 tables or multiple fact tables), spawn three parallel opus subagents — one for Operational (A), one for Analytical (B), one for Behavioral (C). Each gets the same table/column summary and returns its proposed mapping. **For simple schemas** (≤5 tables, ≤1 fact table), generate all three hypotheses inline in a single pass — the subagent overhead isn't worth it.
+**Interview option generation** (in `ground-ontology`): For complex schemas (>5 tables), use Phase 1 subagent outputs to generate smart interview options. For simple schemas (≤5 tables), generate options inline — the subagent overhead isn't worth it. The interview itself is sequential and interactive (requires user input at each step).
 
 **Chart cell generation** (in `create-marimo-report`): After the notebook architecture is decided, spawn haiku subagents to generate individual chart cells in parallel. Each gets the chart spec from the viz plan.
 

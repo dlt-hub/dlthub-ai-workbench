@@ -21,8 +21,7 @@ Do not plan around pandas-first, raw SQL-first, or destination-specific query pa
 ## Prerequisites
 
 Requires from `ground-ontology`:
-- `selected_ontology` (A, B, or C — the confirmed ontology hypothesis)
-- `ontology_comparison` (the scorecard, for context)
+- `selected_ontology` (the user-defined ontology from the interview)
 - Evidence gathered during exploration
 
 If unavailable, run `ground-ontology` first.
@@ -50,7 +49,7 @@ Skip intent elicitation. Auto-select charts based on what the data supports:
 3. Present one checkpoint:
 
 ```
-OVERVIEW — [N] charts from ontology [A|B|C]
+OVERVIEW — [N] charts from ontology [label]
 
 [List each chart: type, title, what it shows, legend]
 
@@ -172,7 +171,7 @@ The output passed to `create-marimo-report` must include these fields. If any ar
 ```
 viz_plan:
   mode: "overview" | "in-depth"
-  ontology_id: "A" | "B" | "C"
+  ontology_label: <business domain label from user interview>
   intent_type: "trend" | "comparison" | "composition" | "correlation"
   primary_question: <what the user wants answered>
   primary_metric: <column or aggregation>
