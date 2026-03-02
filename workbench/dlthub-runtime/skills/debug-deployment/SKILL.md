@@ -31,7 +31,22 @@ Note: logs **always** follow. You will get stuck if job is still running. This i
 dlt runtime cancel <script_or_name> [run#]
 ```
 
-## Open the web dashboard
+## Access production data (read only)
+1. Figure out right profile for data access.
+- **access** profile if it is `configured` (list profiles). if not: **prod** profile (if configured)
+- if none is present ask user which profile to use
+2. **ALWAYS** ask human before accessing production data. Confirm the profile
+2. pin the profile
+3. use mcp tools, run cli, python scripts
+4. pin **dev** profile after work is done
+
+to run a single command on given profile use:
+```
+WORKSPACE__PROFILE=prod dlt pipeline my_pipeline info
+```
+Note: you must pin profile for mcp server to see the change
+
+## Open the web dashboard (for humans)
 
 ```bash
 dlt runtime dashboard
