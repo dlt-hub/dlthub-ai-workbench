@@ -1,0 +1,313 @@
+{
+  "@context": {
+    "schema": "https://schema.org/",
+    "ex": "https://example.org/ontology/",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "ex:Company",
+      "@type": "rdfs:Class",
+      "rdfs:subClassOf": "schema:Organization",
+      "rdfs:label": "Company",
+      "rdfs:comment": "A customer organization that signs contracts for support packages"
+    },
+    {
+      "@id": "ex:Contract",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Contract",
+      "rdfs:comment": "A service agreement between you and a company for support"
+    },
+    {
+      "@id": "ex:SupportPackage",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Support Package",
+      "rdfs:comment": "A tier or level of support offering for the product"
+    },
+    {
+      "@id": "ex:Product",
+      "@type": "rdfs:Class",
+      "rdfs:subClassOf": "schema:Product",
+      "rdfs:label": "Product",
+      "rdfs:comment": "Your product that companies use and receive support for"
+    },
+    {
+      "@id": "ex:Contact",
+      "@type": "rdfs:Class",
+      "rdfs:subClassOf": "schema:Person",
+      "rdfs:label": "Contact",
+      "rdfs:comment": "A point of contact at a customer company"
+    },
+    {
+      "@id": "ex:Address",
+      "@type": "rdfs:Class",
+      "rdfs:subClassOf": "schema:PostalAddress",
+      "rdfs:label": "Address",
+      "rdfs:comment": "A physical location for a company or contact"
+    },
+    {
+      "@id": "ex:LLMPageView",
+      "@type": "rdfs:Class",
+      "rdfs:label": "LLM Page View",
+      "rdfs:comment": "Tracks LLM visibility and appearances on website pages"
+    },
+
+    {
+      "@id": "ex:hasContract",
+      "@type": "rdf:Property",
+      "rdfs:label": "has contract",
+      "rdfs:comment": "Links a company to its contract (1:1 relationship)",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "ex:Contract"
+    },
+    {
+      "@id": "ex:includesPackage",
+      "@type": "rdf:Property",
+      "rdfs:label": "includes package",
+      "rdfs:comment": "Links a contract to its support package (1:1 relationship)",
+      "rdfs:domain": "ex:Contract",
+      "rdfs:range": "ex:SupportPackage"
+    },
+    {
+      "@id": "ex:forProduct",
+      "@type": "rdf:Property",
+      "rdfs:label": "for product",
+      "rdfs:comment": "Links a support package to the product it covers",
+      "rdfs:domain": "ex:SupportPackage",
+      "rdfs:range": "ex:Product"
+    },
+    {
+      "@id": "ex:worksAt",
+      "@type": "rdf:Property",
+      "rdfs:label": "works at",
+      "rdfs:comment": "Links a contact to their primary/current company",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "ex:Company"
+    },
+    {
+      "@id": "ex:formerlyWorkedAt",
+      "@type": "rdf:Property",
+      "rdfs:label": "formerly worked at",
+      "rdfs:comment": "Links a contact to companies they previously worked at (many)",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "ex:Company"
+    },
+    {
+      "@id": "ex:hasContact",
+      "@type": "rdf:Property",
+      "rdfs:label": "has contact",
+      "rdfs:comment": "Links a company to its points of contact",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "ex:Contact"
+    },
+    {
+      "@id": "ex:locatedAt",
+      "@type": "rdf:Property",
+      "rdfs:label": "located at",
+      "rdfs:comment": "Links a company to its business address",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "ex:Address"
+    },
+    {
+      "@id": "ex:livesAt",
+      "@type": "rdf:Property",
+      "rdfs:label": "lives at",
+      "rdfs:comment": "Links a contact to their residential address",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "ex:Address"
+    },
+    {
+      "@id": "ex:onPage",
+      "@type": "rdf:Property",
+      "rdfs:label": "on page",
+      "rdfs:comment": "Links an LLM page view to the page URL where visibility was tracked",
+      "rdfs:domain": "ex:LLMPageView",
+      "rdfs:range": "xsd:anyURI"
+    },
+
+    {
+      "@id": "ex:Company/name",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Company/email",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Company/createdAt",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "xsd:dateTime",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Company/status",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Company",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contract/startDate",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contract",
+      "rdfs:range": "xsd:date",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contract/endDate",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contract",
+      "rdfs:range": "xsd:date",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contract/status",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contract",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contract/signedAt",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contract",
+      "rdfs:range": "xsd:dateTime",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:SupportPackage/name",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:SupportPackage",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:SupportPackage/tier",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:SupportPackage",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:SupportPackage/description",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:SupportPackage",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Product/name",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Product",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Product/description",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Product",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Product/version",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Product",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contact/name",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contact/email",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contact/phone",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Contact/role",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Contact",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Address/street",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Address",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Address/city",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Address",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Address/country",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Address",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:Address/postalCode",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:Address",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:LLMPageView/pageUrl",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:LLMPageView",
+      "rdfs:range": "xsd:anyURI",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:LLMPageView/timestamp",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:LLMPageView",
+      "rdfs:range": "xsd:dateTime",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:LLMPageView/llmModel",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:LLMPageView",
+      "rdfs:range": "xsd:string",
+      "ex:inferred": true
+    },
+    {
+      "@id": "ex:LLMPageView/visibilityScore",
+      "@type": "rdf:Property",
+      "rdfs:domain": "ex:LLMPageView",
+      "rdfs:range": "xsd:decimal",
+      "ex:inferred": true
+    }
+  ]
+}
