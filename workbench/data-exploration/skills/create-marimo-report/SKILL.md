@@ -14,18 +14,19 @@ Parse `$ARGUMENTS`:
 ## When coming from the workflow (overview or in-depth)
 
 If upstream steps (explore-data → ground-ontology → plan-visualizations) are complete, you have:
-- `selected_ontology` (A/B/C)
+- `selected_ontology` (user-defined from interview)
+- `<pipeline_name>_ontology.md` file in the project root (saved by `ground-ontology`)
 - `viz_plan` (chart specs, intent, mode)
 - Evidence gathered during exploration
 
 Before generating, validate the handoff artifacts:
 
-1. **`selected_ontology`** must have: `id`, `label`, `entities` (with table/role/grain), `relationships`, `primary_metric`, `temporal_grain`. If any field is missing, flag it to the user rather than guessing.
+1. **`selected_ontology`** must have: `label`, `entities` (with table/role/grain), `relationships`, `primary_metric`, `temporal_grain`. If any field is missing, flag it to the user rather than guessing.
 2. **`viz_plan`** must have: `mode`, `charts` (each with id/chart_type/title/x/y/source_table), `top_3_chart_ids`. If chart sanity checks show failures, drop those charts and note why.
 
 Then restate the commitment:
 
-"Generating [overview/in-depth] notebook from ontology [A|B|C] for [intent] with [N] charts."
+"Generating [overview/in-depth] notebook from ontology [label] for [intent] with [N] charts."
 
 ### Mode differences
 
@@ -406,7 +407,7 @@ If the chart plan includes a custom widget, verify `anywidget-generator` skill i
 
 ## Mandatory verification
 
-Before presenting to the user:
+Before presenting to the user, run all verification steps. Do not skip any.
 
 ### Step 1 — Install dependencies into the active venv
 
@@ -416,11 +417,13 @@ PEP 723 metadata is only resolved by `uv run`. Ensure all packages are available
 uv add altair ibis-framework pyarrow numpy pandas
 ```
 
-### Step 2 — Run the notebook
+### Step 2 — Run the notebook as a script
 
 ```bash
 uv run python <filename>.py
 ```
+
+This catches import errors, syntax issues, and data access failures. If it fails, fix and re-run before proceeding.
 
 ### Step 3 — Fix common issues
 
@@ -433,12 +436,91 @@ uv run python <filename>.py
 
 If marimo-related issues block the flow, point user to: https://docs.marimo.io/guides/generate_with_ai/skills/
 
-### Step 4 — Launch
+### Step 4 — Launch the notebook
 
-Only after verification:
 ```bash
 marimo edit --watch --no-token <filename>.py
 ```
+
+Run this in the background — verification continues while the notebook serves.
+
+### Step 5 — Visual verification (chart appearance check)
+
+After launching, verify that charts actually render and look correct. This catches issues that the script run (Step 2) cannot: empty charts, wrong chart types, mismatched axes, data that produces a blank plot.
+
+**If a browser screenshot tool is available** (e.g., Chrome extension MCP, browser automation tool):
+
+1. Navigate to the marimo notebook URL (default: `http://localhost:2718`).
+2. Wait for the notebook to fully render (all cells executed).
+3. Take a screenshot of the full notebook page.
+4. Read the screenshot and verify each chart against the viz plan:
+
+| Check | What to look for |
+|---|---|
+| **Chart rendered** | A visible chart area with data — not an empty box, error message, or spinner |
+| **Correct chart type** | Bar chart should show bars, line chart should show lines, scatter should show points |
+| **Axes labeled** | X and Y axes have readable labels matching the planned columns |
+| **Data present** | Chart has actual data points/bars/lines — not a flat line at zero or a single point |
+| **Title matches** | Chart title matches or is close to the planned title |
+| **Stat cards populated** | Stat cards show numbers, not "None" or "NaN" |
+
+5. If any chart fails a check, fix the issue in the notebook code and re-verify.
+
+**If no browser tool is available:**
+
+Run a programmatic data check instead. For each chart cell, extract and run just the data query portion to confirm it returns non-empty results:
+
+```bash
+uv run python -c "
+import dlt
+pipeline = dlt.attach('<pipeline_name>')
+dataset = pipeline.dataset()
+# Test each chart's data query
+df = dataset['<table>'].select('<col1>', '<col2>').head(5).df()
+print(f'Chart: <title> — rows: {len(df)}, columns: {list(df.columns)}')
+assert len(df) > 0, 'Chart would be empty!'
+"
+```
+
+Run one such check per chart. If any returns zero rows, the chart will be blank — fix the query before proceeding.
+
+### Step 6 — Cross-reference with ontology file
+
+Read the ontology file (`<pipeline_name>_ontology.md` in the project root) and verify every chart in the notebook is consistent with it. This catches drift between what the user agreed to and what was actually built.
+
+For each chart cell, check:
+
+| Check | How to verify |
+|---|---|
+| **Source table exists in ontology** | The chart's source table must appear as an entity in the ontology file |
+| **Metric is declared** | The Y-axis column (or aggregated column) must be listed under that entity's Metrics |
+| **Dimension is declared** | The X-axis or color column must be listed under Dimensions or Temporal column |
+| **Grain is respected** | The chart's aggregation level must match or roll up from the entity's declared grain |
+| **Relationships used are documented** | Any join in the chart query must correspond to a relationship in the ontology file |
+
+If a mismatch is found:
+- **Missing entity/column in ontology**: The chart uses data the user didn't confirm. Flag it — either remove the chart or ask the user to confirm the addition.
+- **Wrong metric/dimension**: The chart plots a column that isn't classified the way it's being used (e.g., using an identifier as a metric). Fix the chart or flag the ontology gap.
+- **Undocumented join**: A chart joins tables via a relationship not in the ontology. Verify the join is valid, then flag it for the user.
+
+Report mismatches in the verification summary. Do not silently skip them.
+
+### Step 7 — Report verification results
+
+Summarize what was checked and the outcome:
+
+```
+VERIFICATION RESULTS
+---
+Script run: ✓ passed (no errors)
+Visual check: [N] / [N] charts verified
+Method: [browser screenshot | programmatic data check]
+Ontology cross-reference: [N] / [N] charts match ontology file
+Mismatches: [none | list of mismatches and actions taken]
+Issues found: [none | list of fixes applied]
+```
+
+If any chart was fixed during verification, note what changed.
 
 ## Final checkpoint
 
@@ -448,9 +530,10 @@ Present an outline before writing:
 NOTEBOOK READY ([overview/in-depth])
 ---
 File: [filename].py
-Ontology: [A|B|C]
+Ontology: [label]
 Cells: [N]
-Charts: [chart list]
+Charts: [chart list with verification status]
+Verification: [passed | N issues fixed]
 ```
 
 ## Iterate with the user
