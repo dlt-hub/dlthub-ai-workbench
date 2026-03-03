@@ -37,7 +37,7 @@ If `$ARGUMENTS` is empty or the user asks "how do I start?" / "what should I pro
 
 ## Editing an existing ontology
 
-If `.ontology/ontology.jsonld` exists, read it first. Then:
+If `.schema/ontology.jsonld` exists, read it first. Then:
 - If user provides new scenarios/questions → merge new entities and relationships into the existing graph
 - If user asks to change something → update the specific classes or properties
 - Preserve existing structure unless explicitly asked to replace it
@@ -138,12 +138,13 @@ Include for each property:
 
 ### 6. Save the ontology
 
-Save the ontology to `.ontology/ontology.jsonld` in the workspace root.
+Save the ontology to `.schema/ontology.jsonld` in the workspace root.
 
 ```
-.ontology/
+.schema/
 ├── ontology.jsonld      # The full JSON-LD graph
-└── README.md            # Summary of entities and relationships
+├── README.md            # Summary of entities and relationships
+└── <dataset_name>.ison  # Source schemas (created by create-transformation)
 ```
 
 The ontology is **editable** — update it as new business logic emerges or existing structure needs refinement.
@@ -152,7 +153,7 @@ The ontology is **editable** — update it as new business logic emerges or exis
 
 **For new ontology:**
 ```
-Ontology created: .ontology/ontology.jsonld
+Ontology created: .schema/ontology.jsonld
 
 Entities: <count>
 - <Entity1>: <description>
@@ -172,7 +173,7 @@ Resolved ambiguities:
 
 **For edited ontology:**
 ```
-Ontology updated: .ontology/ontology.jsonld
+Ontology updated: .schema/ontology.jsonld
 
 Changes:
 - Added: <new entities/relationships>
@@ -183,6 +184,6 @@ Current totals: <X> entities, <Y> relationships
 ```
 
 **Next steps:**
-- Review `.ontology/ontology.jsonld` for accuracy
+- Review `.schema/ontology.jsonld` for accuracy
 - Use `summarize-jsonld` to get a human-readable summary
 - Use `create-transformation` to build transformations based on this ontology
