@@ -1,12 +1,19 @@
 # Data exploration workflow
 
-## Flow
+## Core workflow
 
 ```
 connect-and-profile → [dashboard type selection] → (dlt dashboard | analyze-questions → marimo-notebook → launch notebook)
 ```
 
-The user has dlt pipeline data and business questions. This toolkit connects to the data, then offers a choice between the built-in dlt Workspace Dashboard and a custom Marimo notebook.
+1. **Connect + profile** (`connect-and-profile`) — pipeline discovery, schema/stats gathering, anomaly flags
+2. **Dashboard routing** (workflow step) — offer quick dlt dashboard vs custom Marimo notebook
+3. *Quick path*: `dlt pipeline <name> show` — done
+4. *Custom path*: **Ontology + charts** (`analyze-questions`) — 5-step interview, ontology file, chart specs, sanity checks
+5. *Custom path*: **Notebook generation** (`marimo-notebook`, external) — generates marimo notebook from requirements summary
+6. *Custom path*: **Launch notebook** (workflow step) — offer to launch the generated notebook in browser
+
+Routing is mandatory: invoke the corresponding skill via the Skill tool at each step.
 
 ## Dashboard type selection (MANDATORY before chart planning)
 
@@ -69,18 +76,12 @@ At notebook delivery, ask one toggle:
 
 Full API reference: `dlt-relation-api` rule.
 
-## Skill routing
+## Handover to other toolkits
 
-| Step | Skill | What happens |
-|---|---|---|
-| Connect + profile | `connect-and-profile` | Pipeline discovery, schema/stats gathering, anomaly flags |
-| Dashboard routing | (workflow step) | Offer quick dlt dashboard vs custom Marimo notebook |
-| *Quick path* | (workflow step) | `dlt pipeline <name> show` — done |
-| *Custom path:* Ontology + charts | `analyze-questions` | 5-step interview, ontology file, chart specs, sanity checks |
-| *Custom path:* Notebook generation | `marimo-notebook` (external) | Generates marimo notebook from requirements summary |
-| *Custom path:* Launch notebook | (workflow step) | Offer to launch the generated notebook in browser |
+When the user's needs go beyond this toolkit, hand over to:
 
-Routing is mandatory: invoke the corresponding skill via the Skill tool at each step.
+- **rest-api-pipeline** — when the user needs to build or fix a dlt pipeline before exploring data
+- **dlthub-runtime** — when the pipeline is production-ready and the user wants to deploy, schedule, or run it on the dltHub platform
 
 ### marimo-notebook dependency check (HARD GATE)
 
