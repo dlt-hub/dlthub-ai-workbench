@@ -1,12 +1,18 @@
 {
   "name": "data-exploration",
-  "description": "Explore data loaded by dlt pipelines with marimo, datasets, and ibis",
+  "description": "Answer business questions about dlt pipeline data. Connect to pipelines, map business ontology, plan charts, and hand off to marimo-notebook for interactive reports.",
   "version": "0.1.0",
   "author": {
     "name": "dltHub, Inc."
   },
   "homepage": "https://dlthub.com/docs",
-  "repository": "https://github.com/dlt-hub/dlt-ai-dev-kit",
+  "repository": "https://github.com/dlt-hub/dlthub-ai-workbench",
   "license": "Apache-2.0",
-  "keywords": ["dlt", "marimo", "ibis", "data-exploration"]
+  "keywords": ["dlt", "marimo", "ibis", "data-exploration", "dashboards", "altair"],
+  "mcpServers": {
+    "dlt-workspace": {
+      "command": "uv",
+      "args": ["run", "dlt", "ai", "mcp", "run", "--stdio"]
+    }
+  }
 }
