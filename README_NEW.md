@@ -108,7 +108,7 @@ CRITICAL: never ask for credentials in chat. Always let the user edit secrets di
 Once installed, start a new Claude Code session via `claude` in your terminal and use one of the example prompts from the [Available toolkits](#available-toolkits) table above to kick off a workflow.
 
 
-### Cursor, Codex, Copilot — via `dlt ai` CLI
+### Cursor and Codex — via `dlt ai` CLI
 
 #### Installation
 
@@ -127,6 +127,8 @@ uv run dlt ai init --agent <agent>  # <agent>: claude | cursor | codex
 ```
 
 `dlt ai init` detects your coding assistant from environment variables and config files, then installs skills, rules, and the MCP server in the correct locations for that tool.
+
+> **Cursor note:** After running the command, manually enable the MCP server in **Cursor Settings > MCP**.
 
 > **Codex note:** Codex does not support commands and rules, so the installer converts those into skills and AGENTS.md. Codex also runs in a strict sandbox — consider enabling web access in your project or global config:
 > ```toml
