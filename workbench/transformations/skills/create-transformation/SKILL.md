@@ -14,22 +14,49 @@ Parse `$ARGUMENTS`:
 
 ## Prerequisites
 
-### 1. Check for ontology
+### 1. Check for CDM
 
-Read `.schema/ontology.jsonld` to understand the target canonical model.
+Read `.schema/CDM.ison` to understand the target canonical model structure.
 
-If the file doesn't exist or is empty:
-> No ontology found. The ontology defines your canonical data model — the entities and relationships your transformations will produce.
+If the file doesn't exist:
+> No CDM found. The CDM defines your canonical entities and how source data maps to them.
 >
-> Run `create-ontology` first to define your business entities and relationships.
+> Run `generate-cdm` first to create the canonical data model from your ontology.
 
-**STOP and wait for ontology to be created.**
+**STOP and wait for CDM to be created.**
 
-### 2. Connect to source data and extract schema
+### 2. Extract source schema
 
-Ask the user where their source data lives:
+Ask the user for the `pipeline-name` if not already provided as an argument.
+
+#### Path A — dlt-managed pipeline (preferred)
+
+Call `mcp__dlt__list_pipelines` and check if the pipeline name appears in the result.
+
+If found:
+1. Call `mcp__dlt__list_tables` with the pipeline name to get all tables
+2. Call `mcp__dlt__get_table_schema` for each table to get columns and types
+3. Build the ISON schema in-context from the results (no script needed)
+4. Write `.schema/<pipeline_name>.ison` using the format below
+
+Call `mcp__dlt__get_pipeline_local_state` to retrieve the pipeline's `destination` and `dataset_name`. Store both in memory — they are needed any time sample data must be queried during mapping, discrepancy resolution, or validation.
+
+To query sample data at any point, use dlt + ibis directly (not `mcp__dlt__execute_sql_query`, which fails for cloud destinations):
+
+```python
+import dlt
+pipeline = dlt.pipeline(pipeline_name="<name>", destination="<destination>", dataset_name="<dataset_name>")
+db = pipeline.dataset().ibis()
+print(db.table("<table>").limit(5).execute())
+```
+
+#### Path B — non-dlt source (fallback)
+
+If the pipeline is not found via dlt MCP, ask the user:
 - **destination**: e.g. `duckdb`, `postgres`, `bigquery`, `snowflake`
 - **dataset_name**: the database/schema name where data lives
+
+Store both values in memory for the remainder of the session.
 
 **Requirements** (must be installed in the environment):
 ```
@@ -52,11 +79,11 @@ import dlt
 def schema_to_ison(db) -> str:
     """Convert ibis schema to ISON format (https://ison.dev)."""
     lines = []
-    
+
     # Schema table block
     lines.append("table.schema")
     lines.append("table_name column_name column_type nullable")
-    
+
     for table_name in sorted(db.list_tables()):
         schema = db.table(table_name).schema()
         for col_name, col_type in schema.items():
@@ -64,13 +91,13 @@ def schema_to_ison(db) -> str:
             nullable = "true" if "nullable" in type_str.lower() or not type_str.startswith("!") else "false"
             clean_type = type_str.lstrip("!")
             lines.append(f"{table_name} {col_name} {clean_type} {nullable}")
-    
+
     lines.append("")
-    
+
     # Parent-child relationships (dlt convention: __ separator)
     lines.append("table.relationships")
     lines.append("child_table parent_table relationship")
-    
+
     tables = set(db.list_tables())
     for table_name in sorted(tables):
         if "__" in table_name:
@@ -80,15 +107,15 @@ def schema_to_ison(db) -> str:
                 if potential_parent in tables:
                     lines.append(f"{table_name} :{potential_parent} :CHILD_OF")
                     break
-    
+
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
     import os
-    
+
     dataset_name = "<dataset_name>"  # REPLACE: database/schema name
-    
+
     pipeline = dlt.pipeline(
         pipeline_name="source_data",
         destination="<destination>",  # REPLACE: e.g. "bigquery", "postgres"
@@ -96,10 +123,10 @@ if __name__ == "__main__":
     )
     dataset = pipeline.dataset()
     db = dataset.ibis()
-    
+
     ison_output = schema_to_ison(db)
     print(ison_output)
-    
+
     os.makedirs(".schema", exist_ok=True)
     output_path = f".schema/{dataset_name}.ison"
     with open(output_path, "w") as f:
@@ -113,6 +140,22 @@ python extract_schema.py
 ```
 Then read `.schema/<dataset_name>.ison` to confirm success.
 
+#### ISON output format
+
+Both paths produce `.schema/<name>.ison` in this format:
+
+```
+table.schema
+table_name column_name column_type nullable
+contacts id bigint false
+contacts email varchar true
+contacts__associations__companies__results id bigint false
+
+table.relationships
+child_table parent_table relationship
+contacts__associations__companies__results :contacts :CHILD_OF
+```
+
 The output contains:
 - All tables and their columns with types
 - Parent-child relationships based on dlt's `__` naming convention
@@ -120,18 +163,8 @@ The output contains:
 **Essential Reading:**
 - **dlt Transformations**: `https://dlthub.com/docs/hub/features/transformations`
 - Dataset access: `https://dlthub.com/docs/general-usage/dataset-access/dataset`
+- **Ibis expression reference**: `https://ibis-project.org/reference/` — use this to verify correct ibis API for column operations, casting, joins, and aggregations
 - ISON format: `https://ison.dev/spec.html`
-
-### 3. Check for CDM
-
-Read `.schema/CDM.ison` to understand the target canonical model structure.
-
-If the file doesn't exist:
-> No CDM found. The CDM defines your canonical entities and how source data maps to them.
->
-> Run `generate-cdm` first to create the canonical data model from your ontology.
-
-**STOP and wait for CDM to be created.**
 
 ## Steps
 
@@ -174,6 +207,13 @@ Look for gaps and ambiguities:
 - Source type incompatible with CDM type
 - Ask: "Source `properties__amount` is string but CDM expects float. Should we cast it, or handle parse errors?"
 
+**When a discrepancy suggests extending the ontology** (e.g., a source table has no CDM counterpart), apply the entity equivalence check before proposing a new entity:
+
+- Does the source table describe the same real-world object as an existing CDM entity, just under a different name? (e.g., `users` → `Customer`, `accounts` → `Company`, `profiles` → `Contact`)
+- Common aliases to watch: Contact/User/Profile/Member/Person/Lead, Company/Organization/Account/Firm/Client, Deal/Opportunity/Sale, Order/Transaction/Invoice/Purchase
+- If the concept maps to an existing entity: add an alias or note — do **not** create a duplicate entity
+- Only propose a new entity if the concept is genuinely distinct from everything in the CDM
+
 **Present all discrepancies to the user and STOP.** Resolve each before generating transformations.
 
 ### 3. Generate dlt transformation script
@@ -195,17 +235,33 @@ After resolving discrepancies, create `transformations/<dataset>_to_cdm.py`.
    - Map each CDM attribute to its source column(s) using the mapping table from Step 1
    - Apply transforms (casting, concatenation, coalesce) as identified
 
-4. **Handling relationships (many-to-many):**
+4. **Fact vs dimension table handling** — check `table_type` in `.schema/CDM.ison`:
+
+   **Dimension tables** (`table_type = dimension`):
+   - Generate a surrogate key using `ibis.uuid()` or a hash of the natural key: `ibis.md5(table.natural_key.cast("string"))`
+   - Set `primary_key` to the surrogate key column name (from `surrogate_key` in CDM)
+   - Set `write_disposition="merge"` on the surrogate key
+   - For **SCD Type 2** dimensions (`scd_type = 2`): add `valid_from`, `valid_to`, `is_current` columns. Set `valid_from=ibis.now()`, `valid_to=ibis.null().cast("timestamp")`, `is_current=True` on insert; close previous rows by setting `valid_to` and `is_current=False` on change
+   - For **SCD Type 1** (`scd_type = 1`): just overwrite — merge on surrogate key is sufficient
+
+   **Fact tables** (`table_type = fact`):
+   - Respect the grain defined in CDM — one row must represent exactly what the grain says
+   - Look up dimension surrogate keys by joining on natural keys: `dim.join(fact, dim.natural_key == fact.fk_column).select(..., dim.surrogate_key)`
+   - Degenerate dimensions (transaction IDs with no dimension table) stay as plain columns in the fact
+   - Do **not** set a surrogate key on fact tables; use the natural transaction identifier or a composite key
+
+5. **Handling relationships (many-to-many):**
    - CDM relationship tables need joins between association tables and parent tables
    - Use `_dlt_parent_id` → `_dlt_id` join pattern for dlt nested tables
 
-5. **Grouping transformations:**
+6. **Grouping transformations:**
    - Wrap all entity transformations in a `@dlt.source` function
    - This allows running all transformations together
 
-6. **Main execution block:**
+7. **Main execution block:**
    - Create source pipeline pointing to raw data location
    - Create CDM pipeline pointing to CDM dataset location
+   - Run dimensions first, then facts (facts depend on dimension surrogate keys)
    - Run: `cdm_pipeline.run(cdm_transformations(source_pipeline.dataset()))`
 
 ### 4. Transformation patterns
@@ -220,8 +276,187 @@ Apply these patterns based on the mapping table:
 | Null → sentinel | `status=ibis.coalesce(table.status, "UNKNOWN")` |
 | dlt parent-child join | Join on `child._dlt_parent_id == parent._dlt_id` |
 | SQL alternative | `yield dataset("SELECT ... FROM ...")` instead of ibis |
+| Surrogate key — stable natural key | `customer_sk=table.id` (preferred when source id is stable) |
+| Surrogate key — derived hash | `address_sk=key_expr.hash().cast("string")` (no `ibis.md5` — it doesn't exist) |
+| Dimension SK lookup in fact | join dim on natural key, select `dim.surrogate_key` (see join rules below) |
+| Degenerate dimension | Keep `order_id` as plain column in fact — no dimension table needed |
+| SCD Type 2 insert cols | `valid_from=ibis.now(), valid_to=ibis.null().cast("timestamp"), is_current=ibis.literal(True)` |
+| Role-playing dimension | Reference the same dimension table twice with aliased joins (e.g., `order_date_sk`, `ship_date_sk` both from `Date` dim) |
 
-Refer to [dlt transformations docs](https://dlthub.com/docs/hub/features/transformations) for full syntax.
+### 4a. ibis quick reference
+
+This section replaces the need to look up the ibis docs for the patterns that appear in almost every transformation.
+
+#### Decorator
+
+```python
+# CORRECT
+@dlt.hub.transformation(write_disposition="merge", primary_key="customer_sk")
+def dim_customer(dataset: dlt.Dataset):
+    ...
+
+# WRONG — dlt.transformation does not exist
+@dlt.transformation(...)
+```
+
+#### Reading tables
+
+```python
+t = dataset.table("contacts").to_ibis()   # ibis expression — use for complex transforms
+dataset("SELECT id, email FROM contacts") # SQL string — simpler fallback
+```
+
+#### Selecting and renaming columns
+
+```python
+t.select(
+    customer_sk=t.id,                     # rename
+    email=t.properties__email,            # direct
+    name=t.first_name + " " + t.last_name # expression
+)
+```
+
+#### Type casting
+
+```python
+t.col.cast("float64")     # string → float
+t.col.cast("int64")       # string → integer
+t.col.cast("date")        # timestamp → date
+t.col.cast("timestamp")   # string → timestamp
+t.col.cast("string")      # anything → string (needed before .hash())
+```
+
+#### Null handling
+
+```python
+ibis.coalesce(t.col, "UNKNOWN")           # first non-null wins; any number of args
+ibis.coalesce(t.phone, t.mobilephone)     # fallback chain
+ibis.null().cast("timestamp")             # typed null literal
+t.col.isnull()                            # boolean: is null?
+t.col.notnull()                           # boolean: is not null?
+```
+
+#### Boolean filters
+
+```python
+t.filter(t.archived.isnull() | ~t.archived)  # exclude archived rows
+t.filter(t.status.notnull() & (t.amount > 0))
+# & = AND,  | = OR,  ~ = NOT  (all work on ibis boolean columns)
+```
+
+#### isin
+
+```python
+t.filter(t.type.isin(["contact_to_company", "contact_to_company_unlabeled"]))
+# isin accepts a plain Python list
+```
+
+#### Constants / literals
+
+```python
+ibis.now()                   # current timestamp
+True / False                 # bare Python booleans work fine inside .select() — validated
+ibis.literal(True)           # explicit form, also works
+ibis.null().cast("string")   # null of a specific type — validated
+```
+
+#### CASE WHEN
+
+```python
+# ibis.cases() — note the 's', ibis.case() does NOT exist
+ibis.cases()
+    .when(t.type == "contact_to_company", "WORKS_AT")
+    .when(t.type == "former_employer_to_employee", "FORMERLY_WORKED_AT")
+    .otherwise("UNKNOWN")
+    .end()
+
+# Boolean case
+ibis.cases()
+    .when(t.type.isin(["contact_to_company", "contact_to_company_unlabeled"]), ibis.literal(True))
+    .otherwise(ibis.literal(False))
+    .end()
+```
+
+#### String operations
+
+```python
+t.col.strip()                                    # trim whitespace
+t.col.lower()                                    # lowercase
+t.col.contains("foo")                            # substring check → boolean
+(ibis.coalesce(t.first, "") + " " + ibis.coalesce(t.last, "")).strip()  # safe concat
+```
+
+#### Surrogate keys
+
+```python
+# Preferred: use stable source id directly
+customer_sk = t.id
+
+# When no natural id exists (e.g. address derived from fields):
+key_expr = ibis.coalesce(t.street, "") + "|" + ibis.coalesce(t.city, "")
+address_sk = key_expr.hash().cast("string")
+# .hash() returns int64; .cast("string") makes it a usable key
+# WARNING: ibis.md5() does NOT exist — do not use it
+```
+
+#### First row per group (pick one row per parent)
+
+**`VALIDATED`**: `.first(where=col == col.min())` **does NOT work on BigQuery** — it generates invalid SQL (`IGNORE NULLS` with `min`). Use `row_number()` instead:
+
+```python
+# CORRECT — works on BigQuery
+w = ibis.window(group_by="_dlt_parent_id", order_by="_dlt_list_idx")
+ranked = assoc.mutate(rn=ibis.row_number().over(w))
+first_per_group = ranked.filter(ranked.rn == 0).select("_dlt_parent_id", company_id="id")
+
+# SQL fallback (always works)
+ds("""
+    SELECT _dlt_parent_id, id AS company_id
+    FROM (
+      SELECT *, ROW_NUMBER() OVER (PARTITION BY _dlt_parent_id ORDER BY _dlt_list_idx) AS rn
+      FROM <dataset>.<table>
+    ) WHERE rn = 1
+""")
+
+# WRONG — fails on BigQuery with 'IGNORE NULLS not allowed for min'
+t.group_by("_dlt_parent_id").aggregate(
+    company_id=t.id.first(where=t._dlt_list_idx == t._dlt_list_idx.min())
+)
+```
+
+#### Joins — critical rules
+
+```python
+# Basic join
+result = left.join(right, left.id == right.foreign_id, how="left")
+
+# CRITICAL — validated: join column ambiguity is SILENT and causes wrong data.
+# When two joined tables share a column name (e.g. both have 'id'),
+# selecting by name picks the LEFT table silently — no error raised.
+# Always reference columns via the original table variable after a join.
+result.select(
+    customer_sk=left.id,        # ← explicit: left table's id
+    company_sk=right.company_sk,  # ← explicit: right table's column
+)
+# NOT: result.select("id")  ← silently returns left.id even if you wanted right.id
+
+# dlt parent-child join pattern (nested tables use _dlt_parent_id → _dlt_id)
+child.join(parent, child._dlt_parent_id == parent._dlt_id)
+
+# Lookup join: resolve a surrogate key from a dimension
+lookup = dim.select(natural_id=dim.natural_key, sk=dim.surrogate_key)
+fact.join(lookup, fact.fk == lookup.natural_id, how="left").select(..., lookup.sk)
+```
+
+#### Union
+
+```python
+ibis.union(table_a, table_b, distinct=True)   # UNION DISTINCT
+ibis.union(table_a, table_b, distinct=False)  # UNION ALL
+# Both tables must have identical column names and compatible types
+```
+
+Refer to [dlt transformations docs](https://dlthub.com/docs/hub/features/transformations) for full syntax and [ibis reference](https://ibis-project.org/reference/) for edge cases.
 
 ### 5. Validate and test
 
@@ -236,7 +471,17 @@ print(dataset(relation).columns)
 
 2. **Run transformations** — Execute in the user's environment
 3. **Verify row counts** — `cdm_pipeline.dataset().row_counts().df()`
-4. **Spot check data** — Sample a few rows from each CDM table
+4. **Spot check data** — Query source or CDM data using dlt + ibis directly:
+
+```python
+import dlt
+pipeline = dlt.pipeline(pipeline_name="<name>", destination="<destination>", dataset_name="<dataset_name>")
+db = pipeline.dataset().ibis()
+print(db.table("companies").limit(5).execute())
+print(db.sql("SELECT DISTINCT type FROM contacts__associations__companies__results").execute())
+```
+
+Run via `uv run python -c "..."`. **Do not use `mcp__dlt__execute_sql_query`** — it fails for cloud destinations (BigQuery, Snowflake, etc.) because the MCP server has no access to destination credentials. `mcp__dlt__list_tables` and `mcp__dlt__get_table_schema` still work fine as they read local pipeline state only.
 
 ## Output
 

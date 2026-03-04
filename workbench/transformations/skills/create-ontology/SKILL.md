@@ -185,5 +185,5 @@ Current totals: <X> entities, <Y> relationships
 
 **Next steps:**
 - Review `.schema/ontology.jsonld` for accuracy
-- Use `summarize-jsonld` to get a human-readable summary
-- Use `create-transformation` to build transformations based on this ontology
+- Use `generate-cdm` to translate the ontology into an implementation-ready canonical data model
+- Use `create-transformation` to map source data to the CDM

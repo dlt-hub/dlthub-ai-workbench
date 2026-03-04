@@ -128,14 +128,14 @@
     },
 
     {
-      "@id": "ex:Company/name",
+      "@id": "ex:Company/domain",
       "@type": "rdf:Property",
       "rdfs:domain": "ex:Company",
-      "rdfs:range": "xsd:string",
+      "rdfs:range": "xsd:anyURI",
       "ex:inferred": true
     },
     {
-      "@id": "ex:Company/email",
+      "@id": "ex:Company/name",
       "@type": "rdf:Property",
       "rdfs:domain": "ex:Company",
       "rdfs:range": "xsd:string",
