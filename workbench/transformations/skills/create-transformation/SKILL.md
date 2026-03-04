@@ -34,12 +34,22 @@ Ask the user for the `pipeline-name` if not already provided as an argument.
 Call `mcp__dlt__list_pipelines` and check if the pipeline name appears in the result.
 
 If found:
-1. Call `mcp__dlt__list_tables` with the pipeline name to get all tables
-2. Call `mcp__dlt__get_table_schema` for each table to get columns and types
-3. Build the ISON schema in-context from the results (no script needed)
-4. Write `.schema/<pipeline_name>.ison` using the format below
+1. Call `mcp__dlt__get_pipeline_local_state` to retrieve `destination` and `dataset_name`. Store both — needed for all subsequent data queries.
+2. Use dlt + ibis to get the **actual destination columns** (not MCP local state — it includes null-only columns that were never materialized):
 
-Call `mcp__dlt__get_pipeline_local_state` to retrieve the pipeline's `destination` and `dataset_name`. Store both in memory — they are needed any time sample data must be queried during mapping, discrepancy resolution, or validation.
+```python
+import dlt
+pipeline = dlt.pipeline(pipeline_name="<name>", destination="<destination>", dataset_name="<dataset_name>")
+db = pipeline.dataset().ibis()
+for table in sorted(db.list_tables()):
+    print(table, db.table(table).schema())
+```
+
+3. Build the ISON from the ibis schema results and write `.schema/<pipeline_name>.ison`.
+
+> **STOP — do not begin mapping until `.schema/<pipeline_name>.ison` has been written and you have read it back.**
+>
+> MCP `get_table_schema` reflects dlt's local normalizer state and may include columns with no `data_type` (seen as null-only, never materialized in the destination). Only ibis reflects what columns actually exist. Mapping against MCP-only metadata will cause `AttributeError` at runtime.
 
 To query sample data at any point, use dlt + ibis directly (not `mcp__dlt__execute_sql_query`, which fails for cloud destinations):
 
@@ -363,18 +373,19 @@ ibis.null().cast("string")   # null of a specific type — validated
 #### CASE WHEN
 
 ```python
-# ibis.cases() — note the 's', ibis.case() does NOT exist
-ibis.cases()
-    .when(t.type == "contact_to_company", "WORKS_AT")
-    .when(t.type == "former_employer_to_employee", "FORMERLY_WORKED_AT")
-    .otherwise("UNKNOWN")
-    .end()
+# ibis 10+ API: ibis.cases() takes (condition, result) tuples + else_ kwarg
+# ibis.case() does NOT exist; ibis.cases() does NOT support method chaining in ibis 12+
+ibis.cases(
+    (t.type == "contact_to_company", "WORKS_AT"),
+    (t.type == "former_employer_to_employee", "FORMERLY_WORKED_AT"),
+    else_="UNKNOWN",
+)
 
 # Boolean case
-ibis.cases()
-    .when(t.type.isin(["contact_to_company", "contact_to_company_unlabeled"]), ibis.literal(True))
-    .otherwise(ibis.literal(False))
-    .end()
+ibis.cases(
+    (t.type.isin(["contact_to_company", "contact_to_company_unlabeled"]), ibis.literal(True)),
+    else_=ibis.literal(False),
+)
 ```
 
 #### String operations
