@@ -309,6 +309,30 @@ def dim_customer(dataset: dlt.Dataset):
 @dlt.transformation(...)
 ```
 
+#### Column hints — ALWAYS declare nullable/cross-source columns
+
+**`VALIDATED`**: dlt wraps your transformation SQL in an outer `SELECT` generated from its stored schema. Any column that has ever been NULL-only in a prior run has **no `data_type`** in the schema and is silently stripped from the outer SELECT — even if your SQL returns real values for it. This affects:
+
+- Columns from LEFT JOIN lookups (e.g. resolving a surrogate key from another dataset)
+- Any column that may be empty on the first run and populated later
+
+**Always declare these columns explicitly in the decorator:**
+
+```python
+@dlt.hub.transformation(
+    write_disposition="merge",
+    primary_key="guest_id",
+    columns={
+        "contact_sk": {"data_type": "text", "nullable": True},   # LEFT JOIN lookup — may be NULL first run
+        "amount":     {"data_type": "double", "nullable": True},  # cast from string — may be empty
+    },
+)
+def fact_event_attendee(dataset: dlt.Dataset):
+    return dataset("SELECT ..., c.contact_sk FROM ... LEFT JOIN other_dataset.dim_contact c ...")
+```
+
+Omitting `columns=` for these cases causes silent data loss with no error — only a dlt warning: *"The following columns did not receive any data during this load"*.
+
 #### Reading tables
 
 ```python
