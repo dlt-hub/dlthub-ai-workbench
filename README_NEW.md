@@ -6,6 +6,7 @@ The **dltHub AI Workbench** is a collection of toolkits that give AI coding assi
 
 The dltHub AI Workbench is tested with **Claude Code**, **Cursor**, and **Codex** and may work with other AI coding assistants. We recommend workings in `accept edits` (Claude) / `--approval-mode` (Codex) mode to review the changes and familiarizing with dlthub AI workflows when getting started with the dlthub AI workbench.
 
+## TO DO: add link to the dlt docs
 
 ## The dlthub AI workbench supports the iterative data engineering workflow
 
