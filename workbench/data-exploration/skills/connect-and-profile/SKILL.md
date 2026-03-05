@@ -1,6 +1,6 @@
 ---
 name: connect-and-profile
-description: This skill should be used when the user wants to attach to a pipeline, query loaded data, check what tables exist, show row counts, profile data quality, explore loaded tables, or understand what a pipeline produced — even if they don't say "connect" or "profile" explicitly. Trigger phrases include "what tables do I have", "show me the data", "how many rows", "connect to my pipeline", "what did the pipeline load".
+description: This skill should be used when the user wants to attach to a pipeline, query loaded data, check what tables exist, show row counts, preview sample rows, inspect table schemas, profile data quality, explore loaded tables, or understand what a pipeline produced — even if they don't say "connect" or "profile" explicitly. Trigger phrases include "what tables do I have", "show me the data", "show me sample data", "how many rows", "how many rows in the X table", "what does the schema look like", "show me the schemas", "connect to my pipeline", "what did the pipeline load", "what did it produce".
 ---
 
 # Connect to pipeline data and profile tables

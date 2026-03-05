@@ -184,9 +184,9 @@ of three approaches: priority cascade, multi-intent, ontology-weighted.
 
 Map the ontology's shape to chart intent types automatically. Produce a primary intent (and optionally a secondary intent) with a rationale string. Present the inferred intents for confirmation — do not ask the user to pick from abstract types.
 
-### Chart spec format, log scales, and sanity checks
+### Chart spec format and sanity checks
 
-See `references/chart-planning.md` for the full chart spec template, log scale decision rules, and the 6-point sanity check table. Every chart must pass all sanity checks before finalizing.
+See `references/chart-planning.md` for the full chart spec template and the 5-point sanity check table. Every chart must pass all sanity checks before finalizing.
 
 ### Chart confirmation
 
