@@ -202,8 +202,8 @@ uv run dlt ai mcp run --stdio               # run in stdio mode (for assistants 
 uv run dlt ai mcp install                   # register the MCP server in the agent's config
 ```
 
-The MCP server is what allows the assistant to answer questions like "what tables were loaded?" or "show me the last pipeline trace" without you having to copy-paste output into the chat.
+The MCP server allows the assistant to answer questions like "what tables were loaded?" or "show me the last pipeline trace" without you having to copy-paste output into the chat.
 
 ## License
 
-TO BE UPDATED
+This project is licensed under the [dltHub AI Workbench License](LICENSE).
