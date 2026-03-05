@@ -58,60 +58,9 @@ All toolkits depend on `init` for shared rules, secrets handling, and the MCP se
 
 ## Getting started
 
-> **Note:** All `dlt ai` commands below use `uv run dlt ...` syntax. If you have `dlt` installed globally or in an active virtual environment, you can omit `uv run` and call `dlt` directly.
+> **Note:** All `dlt ai` commands below use `uv run dlt ...` syntax. If you have `dlt` installed globally or in an active virtual environment, you can omit `uv run` and call `dlt` directly. We recommend using uv.
 
-### Claude Code
-
-For Claude Code, we recommmend installing the dlthub AI workbench via the Claude marketplace. If you want to modify the content of the plugin to adapt it to your workflow, you can follow the [installation steps for Cursor and Codex](#cursor-codex-copilot--via-dlt-ai-cli) below.
-
-#### Installation
-
-Start a Claude Code session in your terminal via `claude`.
-
-Inside the Claude session, add the marketplace:
-```
-/plugin marketplace add dlt-hub/dlthub-ai-workbench
-```
-
-Install the `init` plugin first — it provides shared rules, secrets handling, and the MCP server config:
-```
-/plugin install init@dlthub-ai-workbench --scope project
-```
-
-Install the toolkits you want to use (if you are not sure which one to install we recommend installing all of them):
-```
-/plugin install bootstrap@dlthub-ai-workbench --scope project
-/plugin install rest-api-pipeline@dlthub-ai-workbench --scope project
-/plugin install dlthub-runtime@dlthub-ai-workbench --scope project
-/plugin install data-exploration@dlthub-ai-workbench --scope project
-```
-
-Start a new session — plugins take effect only after restarting Claude Code: `claude`
-
-For the MCP server to run, `uv` and `dlt` must be installed on your machine. If you don't have them yet, install `bootstrap` first and run `/init-workspace` before starting a new session.
-
-> **No Python environment yet?** The `bootstrap` toolkit (installed above) sets up `uv`, Python, and `dlt` for you — run `/init-workspace` to get started.
-
-> **Resuming a session?** Plugins installed mid-session are not active until you start a new one. Previous sessions can be resumed, but the new toolkit skills will only be available in sessions started after installation.
-
-#### Recommended CLAUDE.md additions
-
-Add the following to your `CLAUDE.md` to enforce safe credential handling:
-
-```markdown
-CRITICAL: never ask for credentials in chat. Always let the user edit secrets directly and do not attempt to read them.
-```
-
-#### Starting the workbench
-
-Once installed, start a new Claude Code session via `claude` in your terminal and use one of the example prompts from the [Available toolkits](#available-toolkits) table above to kick off a workflow.
-
-
-### Cursor and Codex — via `dlt ai` CLI
-
-The dltHub AI workbench does not yet support the Cursor marketplace. Installation for Cursor and Codex works via the `dlt ai` CLI.
-
-#### Installation
+### Installation
 
 ```bash
 # Install uv (fast Python package manager) if you don't have it
@@ -129,17 +78,30 @@ uv run dlt ai init --agent <agent>  # <agent>: claude | cursor | codex
 
 `dlt ai init` detects your coding assistant from environment variables and config files, then installs skills, rules, and the MCP server in the correct locations for that tool.
 
-> **Cursor note:** After running the command, manually enable the dlt-workspace-mcp server in **Cursor Settings > MCP**.
+> **Claude Code note:** Add the following to your `CLAUDE.md` to enforce safe credential handling:
+> ```markdown
+> CRITICAL: never ask for credentials in chat. Always let the user edit secrets directly and do not attempt to read them.
+> ```
+
+> **Cursor note:** After running the command, manually enable the dlt-workspace-mcp server in **Cursor Settings > MCP**. Add the following to your `.cursor/rules/security.mdc` to enforce safe credential handling:
+> ```markdown
+> CRITICAL: never ask for credentials in chat. Always let the user edit secrets directly and do not attempt to read them.
+> ```
 
 > **Codex note:** Codex does not support commands and rules, so the installer converts those into skills and AGENTS.md. Codex also runs in a strict sandbox — consider enabling web access in your project or global config:
 > ```toml
 > # .codex/config.toml
 > web_search = "live"
 > ```
+> Add the following to your `AGENTS.md` to enforce safe credential handling:
+> ```markdown
+> CRITICAL: never ask for credentials in chat. Always let the user edit secrets directly and do not attempt to read them.
+> ```
 
-**Browse and install toolkits**  
+### Browse and install toolkits
 
-Browse available toolkits:
+> **No Python environment yet?** The `bootstrap` toolkit (installed above) sets up `uv`, Python, and `dlt` for you — run `/init-workspace` to get started.
+
 
 ```bash
 uv run dlt ai toolkit list
@@ -154,22 +116,34 @@ uv run dlt ai toolkit dlthub-runtime install
 uv run dlt ai toolkit data-exploration install
 ```
 
-
-#### Starting the workbench
+### Starting the workbench
 
 Use one of the example prompts from the [Available toolkits](#available-toolkits) table above to kick off a workflow.
 
-**Cursor** — open the project in Cursor and use the chat panel (Cmd+L) to talk to the assistant. The installed skills and rules are picked up automatically. Add the following to your `.cursor/rules/security.mdc` to enforce safe credential handling:
+**Claude Code** — start a new session via `claude` in your terminal. Restart after installation for skills and MCP to take effect.
 
-```markdown
-CRITICAL: never ask for credentials in chat. Always let the user edit secrets directly and do not attempt to read them.
+**Cursor** — open the project in Cursor and use the chat panel (Cmd+L). The installed skills and rules are picked up automatically.
+
+**Codex** — launch the Codex CLI via `codex` or use the Codex chat in the UI. Restart Codex after setup for the MCP server to take effect.
+
+### Claude Code marketplace plugin (Early Access)
+
+> **Early Access:** The Claude Code plugin is currently in early access and may not provide the best linking experience between different toolkits. We recommend using the `dlt ai` CLI above for the most up-to-date experience.
+
+The workbench is also available as a Claude Code plugin via the marketplace. Start a Claude Code session and run:
+
+```
+/plugin marketplace add dlt-hub/dlthub-ai-workbench
+/plugin install init@dlthub-ai-workbench --scope project
+/plugin install bootstrap@dlthub-ai-workbench --scope project
+/plugin install rest-api-pipeline@dlthub-ai-workbench --scope project
+/plugin install dlthub-runtime@dlthub-ai-workbench --scope project
+/plugin install data-exploration@dlthub-ai-workbench --scope project
 ```
 
-**Codex** — either launch the Codex CLI in your terminal via `codex` or use the Codex chat in the UI. Skills are available in both modes. The Codex CLI picks up the MCP server automatically; in the Codex UI you need to copy the MCP configuration manually. Restart Codex after setup for the MCP server to take effect. Add the following to your `AGENTS.md` to enforce safe credential handling:
+Start a new session — plugins take effect only after restarting Claude Code: `claude`
 
-```markdown
-CRITICAL: never ask for credentials in chat. Always let the user edit secrets directly and do not attempt to read them.
-```
+> **Resuming a session?** Plugins installed mid-session are not active until you start a new one.
 
 
 ## The `dlt ai` CLI
