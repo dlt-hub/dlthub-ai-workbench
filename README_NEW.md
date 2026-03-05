@@ -6,8 +6,6 @@ The **dltHub AI Workbench** is a collection of toolkits that give AI coding assi
 
 The dltHub AI Workbench is tested with **Claude Code**, **Cursor**, and **Codex** and may work with other AI coding assistants. We recommend workings in `accept edits` (Claude) / `--approval-mode` (Codex) mode to review the changes and familiarizing with dlthub AI workflows when getting started with the dlthub AI workbench.
 
-## TO DO: add link to the dlt docs
-
 ## The dlthub AI workbench supports the iterative data engineering workflow
 
 Building data pipelines is iterative and covers two major phases — **ingestion** and **transformation** — each following the same inner loop:
@@ -64,9 +62,9 @@ All toolkits depend on `init` for shared rules, secrets handling, and the MCP se
 
 ### Claude Code
 
-#### Installation
+For Claude Code, we recommmend installing the dlthub AI workbench via the Claude marketplace. If you want to modify the content of the plugin to adapt it to your workflow, you can follow the [installation steps for Cursor and Codex](#cursor-codex-copilot--via-dlt-ai-cli) below.
 
-Add the workbench via the Claude marketplace (if you want to modify the content of the plugin to adapt it to your workflow, you can follow the [installation steps for Cursor and Codex](#cursor-codex-copilot--via-dlt-ai-cli) below):
+#### Installation
 
 Start a Claude Code session in your terminal via `claude`.
 
@@ -111,6 +109,8 @@ Once installed, start a new Claude Code session via `claude` in your terminal an
 
 ### Cursor and Codex — via `dlt ai` CLI
 
+The dltHub AI workbench does not yet support the Cursor marketplace. Installation for Cursor and Codex works via the `dlt ai` CLI.
+
 #### Installation
 
 ```bash
@@ -129,7 +129,7 @@ uv run dlt ai init --agent <agent>  # <agent>: claude | cursor | codex
 
 `dlt ai init` detects your coding assistant from environment variables and config files, then installs skills, rules, and the MCP server in the correct locations for that tool.
 
-> **Cursor note:** After running the command, manually enable the MCP server in **Cursor Settings > MCP**.
+> **Cursor note:** After running the command, manually enable the dlt-workspace-mcp server in **Cursor Settings > MCP**.
 
 > **Codex note:** Codex does not support commands and rules, so the installer converts those into skills and AGENTS.md. Codex also runs in a strict sandbox — consider enabling web access in your project or global config:
 > ```toml
