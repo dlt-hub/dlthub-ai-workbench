@@ -229,7 +229,7 @@ Present this summary to the user.
 1. Tell the user the "marimo-notebook" skill is required.
 2. Show the install command:
    ```
-   npx skills add marimo-team/skills
+   npx skills add marimo-team/skills --skill marimo-notebook
    ```
 3. **STOP. Do not generate a notebook yourself. Do not write marimo code. Do not attempt to build the dashboard inline.** Wait for the user to install the skill and re-invoke.
 

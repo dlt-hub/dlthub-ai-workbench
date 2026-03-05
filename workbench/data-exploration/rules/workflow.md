@@ -93,7 +93,7 @@ Before handing off to notebook generation, verify the `marimo-notebook` skill is
 The "marimo-notebook" skill is required for notebook generation.
 Install it:
 
-npx skills add marimo-team/skills
+npx skills add marimo-team/skills --skill marimo-notebook
 ```
 
 Then wait. Only proceed after the user confirms the skill is installed.
