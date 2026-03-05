@@ -1,189 +1,185 @@
 ---
 name: create-ontology
-description: Build or edit a data model by creating a structured JSON-LD ontology. Use when the user wants to create a data model, edit their data model, describes business logic or data relationships, or asks how to get started with data modeling. The ontology is the foundation of the data model.
-argument-hint: <business-scenarios or domain description>
+description: Build or edit a data model ontology. Use when the user wants to create a data model, edit their data model, or asks how to get started with data modeling. Takes company name, a one-line business description, and main DB tables as input — then auto-completes the ontology using web research.
+argument-hint: <company name> | <one-line business description> | <comma-separated table names>
 ---
 
-# Create ontology from business scenarios
+# Create ontology from company context
 
-**The ontology is the foundation of your data model.** Before building transformations or analytics, we capture your business domain as a structured graph of entities and relationships. This ensures your data model accurately reflects how your business works.
+**The ontology is the foundation of your data model.** It captures your business domain as a structured graph of entities and relationships, seeded from your existing tables and enriched with what's known about your industry.
 
-Transform a list of business questions or scenarios (up to 20) into a formal JSON-LD ontology that captures entities, relationships, and identifies modeling gaps.
+**Keep Q&A to a minimum.** Ask for missing inputs once (see below), then proceed autonomously. Do not ask follow-up questions — make reasonable inferences, record every assumption in `table.assumptions`, and let the user correct them after reviewing the output.
 
-Parse `$ARGUMENTS`:
-- `business-scenarios` (optional): natural language description of business questions, scenarios, or domain concepts
+Parse `$ARGUMENTS` — expect three pipe-separated values:
+- `company` — company name (used for web research)
+- `description` — one-line business model (e.g. "ride-sharing company")
+- `tables` — comma-separated list of main DB tables (e.g. "rides, captains, vendor")
 
-## Getting started prompt
+## Input prompt
 
-If `$ARGUMENTS` is empty or the user asks "how do I start?" / "what should I provide?", prompt them:
+If any of the three inputs are missing, ask for all three at once:
 
-> To build your data model, we start by creating an **ontology** — a structured map of your business entities and how they relate. This is the foundation that ensures your data model accurately represents your domain.
+> To build your ontology I need three things:
 >
-> To get started, I need to understand what questions you want your data to answer.
+> 1. **Company name** — used to research your domain online
+> 2. **One-line business description** — e.g. "ride-sharing company", "B2B SaaS for HR teams"
+> 3. **Main DB tables** — comma-separated list of your core tables
 >
-> **Option A:** Give me up to 20 business questions you need answered daily, like:
-> - "Who are my top customers this month?"
-> - "Which products are running low on stock?"
-> - "What's our revenue trend this quarter?"
->
-> **Option B:** Describe 3-5 business scenarios, like:
-> - "A customer places an order with multiple products"
-> - "A subscription renews monthly and can be paused"
-> - "Sales reps are assigned to accounts by region"
->
-> Either works — questions help me understand what you need to *measure*, scenarios help me understand how things *relate*.
+> Example: `HubSpot | B2B CRM and marketing automation platform | contacts, companies, deals, engagements`
 
-**STOP and wait for user input before proceeding.**
+**STOP and wait for input before proceeding.**
 
 ## Editing an existing ontology
 
-If `.schema/ontology.jsonld` exists, read it first. Then:
-- If user provides new scenarios/questions → merge new entities and relationships into the existing graph
-- If user asks to change something → update the specific classes or properties
+If `.schema/ontology.ison` exists, read it first. Then:
+- Merge new entities and relationships into the existing tables
 - Preserve existing structure unless explicitly asked to replace it
-
-Show the user what changed: "Added 2 new entities, updated 1 relationship."
+- Show the user what changed: "Added 2 entities, updated 1 relationship."
 
 ## Steps
 
-### 1. Extract entities (classes)
+### 1. Research the company
 
-Identify primary classes from the scenarios:
-- Look for nouns that represent core domain concepts (e.g., Customer, Subscription, Transaction, Order, Product)
-- Use [schema.org](https://schema.org) terms where applicable (e.g., `schema:Person`, `schema:Organization`, `schema:Order`)
-- For domain-specific concepts not in schema.org, use a custom namespace (`ex:`)
+Use the WebSearch tool to look up the company name. Find:
+- What the company does (products, services, business model)
+- Key domain concepts used in their industry
+- Any known data model patterns for this domain (e.g. "ride-hailing platforms typically model routes, trips, drivers, passengers")
 
-Output a preliminary list of classes with brief descriptions.
+Use findings to inform entity and attribute inference in the steps below.
 
-### 2. Map relationships
+### 2. Seed entities from source tables
 
-Define how classes connect to each other:
-- Identify verbs and ownership patterns (e.g., "Customer places Order" → `Customer -> placesOrder -> Order`)
-- Define relationship properties with appropriate cardinality hints
-- Use schema.org properties where applicable, otherwise define custom ones in `ex:` namespace
+Each table the user listed is a confirmed entity. Add it to the ontology with:
+- `source_table` set to the actual table name
+- `inferred: false`
 
-Common relationship patterns:
-- `hasX` / `belongsTo` — ownership/containment
-- `relatedTo` — loose association  
-- `memberOf` / `hasMember` — group membership
-- `createdBy` / `creates` — authorship
+### 3. Infer additional entities
 
-### 3. Autocomplete standard attributes
+Based on web research and the domain, identify standard entities that likely exist but weren't listed as tables. Common patterns:
 
-If the user provides fewer than 5 scenarios, infer standard industry attributes:
-
-| Entity type | Inferred attributes |
+| Domain | Entities typically inferred |
 |---|---|
-| Order/Transaction | timestamp, status, total, currency |
-| User/Customer | email, createdAt, status |
-| Product | name, price, sku, description |
-| Subscription | startDate, endDate, plan, status |
-| Address | street, city, country, postalCode |
+| Ride-hailing / transit | Route, Booking, Vehicle, User/Passenger |
+| E-commerce | OrderLine, Product, Payment, Address |
+| SaaS / subscriptions | Subscription, Plan, Invoice, Feature |
+| Marketplace | Listing, Review, Payout, Category |
+| Logistics | Shipment, Warehouse, Carrier, TrackingEvent |
 
-Flag inferred attributes as `"inferred": true` in the ontology.
+Mark these as `inferred: true`. They may not have a source table yet.
 
-### 4. Identify the Ambiguity Fork
+### 4. Define attributes for each entity
 
-Find structural questions (cardinality, hierarchy) that cannot be answered from the input. Generate up to 5 critical questions:
+For each entity (both confirmed and inferred):
+- Include standard attributes for its type (id, status, created_at, etc.)
+- Add domain-specific attributes from web research
+- Flag inferred attributes as `inferred: true`
 
-Examples:
-- "Can a User have multiple Accounts?"
-- "Is an Order tied to one Product or multiple Products?"
-- "Does a Subscription belong to a User or an Organization?"
-- "Are Transactions immutable or can their status change?"
-- "Is Address embedded in Customer or a separate entity?"
+Standard attributes by entity type:
 
-**Present these questions to the user and STOP.** Do not finalize the ontology until ambiguities are resolved.
+| Entity type | Standard attributes |
+|---|---|
+| Event / transaction | id, status, created_at, currency, amount |
+| Person / user | id, name, email, phone, status, created_at |
+| Organisation / account | id, name, contact_email, status, created_at |
+| Vehicle / asset | id, make, model, capacity, status, license_plate |
+| Route / path | id, name, origin, destination, status |
 
-### 5. Generate JSON-LD ontology
+### 5. Map relationships
 
-After resolving ambiguities, generate the full JSON-LD object:
+For each pair of entities, define how they connect:
+- Cardinality: `one_to_one`, `one_to_many`, `many_to_many`
+- Mandatory or optional
+- Semantic label in UPPER_SNAKE_CASE (e.g. `OPERATED_BY`, `BELONGS_TO`, `INSTANCE_OF`)
 
-```json
-{
-  "@context": {
-    "schema": "https://schema.org/",
-    "ex": "https://example.org/ontology/",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
-  },
-  "@graph": [
-    {
-      "@id": "ex:Customer",
-      "@type": "rdfs:Class",
-      "rdfs:label": "Customer",
-      "rdfs:comment": "A person or organization that purchases products"
-    },
-    {
-      "@id": "ex:hasSubscription",
-      "@type": "rdf:Property",
-      "rdfs:domain": "ex:Customer",
-      "rdfs:range": "ex:Subscription"
-    }
-  ]
-}
-```
+Default cardinality assumptions (override with web research):
+- Transactions/events → their context entities: `many_to_one`, mandatory
+- Users → organisations: `many_to_one`, optional
+- Assets → their operators/owners: `many_to_one`, optional
 
-Include for each class:
-- `@id` — unique identifier
-- `@type` — `rdfs:Class`
-- `rdfs:label` — human-readable name
-- `rdfs:comment` — description
-- `rdfs:subClassOf` — parent class if applicable
+### 6. State assumptions
 
-Include for each property:
-- `@id` — unique identifier
-- `@type` — `rdf:Property` or `owl:ObjectProperty`
-- `rdfs:domain` — source class
-- `rdfs:range` — target class or datatype
+Collect every inference made — entity existence, attribute inclusion, cardinality choice — into the `table.assumptions` section. Be specific:
 
-### 6. Save the ontology
+> "Assumed Route is a separate entity from Ride because ride-hailing platforms typically reuse routes across many trip instances."
+> "Assumed Booking.fare is nullable — fare may not be settled at booking time."
 
-Save the ontology to `.schema/ontology.jsonld` in the workspace root.
+### 7. Generate ontology in ISON format
+
+Save to `.schema/ontology.ison` using ISON tabular format ([spec](https://ison.dev/spec.html)):
 
 ```
-.schema/
-├── ontology.jsonld      # The full JSON-LD graph
-├── README.md            # Summary of entities and relationships
-└── <dataset_name>.ison  # Source schemas (created by create-transformation)
+meta.ontology
+version company business_model
+1.0 "Acme Corp" "ride-sharing company"
+
+table.entities
+id:string label:string description:string source_table:string inferred:bool
+Route Route "Reusable path template between origin and destination" "" true
+Ride Ride "A scheduled trip instance on a Route" rides false
+Captain Captain "A driver who operates Rides" captains false
+
+table.attributes
+entity:ref name:string type:string nullable:bool inferred:bool description:string
+:Route route_id string false false "Unique route identifier"
+:Route name string false true "Human-readable route label"
+:Route origin string false true "Starting point"
+:Route destination string false true "Ending point"
+:Route status string false true "active | inactive | draft"
+:Ride ride_id string false false "Unique ride identifier"
+:Ride route_id string false true "FK → Route"
+:Ride status string false true "scheduled | in_progress | completed | cancelled"
+:Ride scheduled_at datetime false true "Planned departure time"
+
+table.relationships
+id:string label:string domain:ref range:ref cardinality:string mandatory:bool description:string
+R001 INSTANCE_OF Ride Route many_to_one true "Many rides occur on the same route at different times"
+R002 OPERATED_BY Ride Captain many_to_one true "Each ride is driven by one captain"
+
+table.assumptions
+id:string entity:string assumption:string
+A001 Route "Route inferred as a separate entity — ride-hailing platforms reuse routes across many trip instances"
+A002 Booking "Booking inferred as likely entity — platforms of this type track individual passenger reservations"
 ```
 
-The ontology is **editable** — update it as new business logic emerges or existing structure needs refinement.
+### 8. Save ontology summary [MANDATORY]
+
+Write `.schema/ontology.md` with:
+- Company name and business description
+- Entity list with one-line descriptions
+- Relationship summary
+- List of all assumptions made
+- Note on inferred vs confirmed entities
 
 ## Output
 
-**For new ontology:**
 ```
-Ontology created: .schema/ontology.jsonld
+Ontology created: .schema/ontology.ison
 
-Entities: <count>
-- <Entity1>: <description>
-- <Entity2>: <description>
-...
+Confirmed entities (from your tables): <count>
+- <Entity>: <description>
+
+Inferred entities (from web research): <count>
+- <Entity>: <description> [ASSUMPTION: <reason>]
 
 Relationships: <count>
-- <Entity1> -> <relationship> -> <Entity2>
-...
+- <Entity> -[LABEL]-> <Entity> (<cardinality>)
 
-Inferred attributes: <list if any>
-
-Resolved ambiguities:
-- <question>: <answer>
-...
+Assumptions: <count> — see .schema/ontology.md for full list
 ```
 
 **For edited ontology:**
 ```
-Ontology updated: .schema/ontology.jsonld
+Ontology updated: .schema/ontology.ison
 
 Changes:
 - Added: <new entities/relationships>
-- Updated: <modified entities/relationships>
+- Updated: <modified items>
 - Removed: <deleted items, if any>
 
 Current totals: <X> entities, <Y> relationships
 ```
 
 **Next steps:**
-- Review `.schema/ontology.jsonld` for accuracy
+- Review `.schema/ontology.ison` and correct any wrong assumptions
 - Use `generate-cdm` to translate the ontology into an implementation-ready canonical data model
 - Use `create-transformation` to map source data to the CDM
