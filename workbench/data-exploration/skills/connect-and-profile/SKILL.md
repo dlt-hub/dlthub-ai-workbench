@@ -68,6 +68,7 @@ After connecting, profile only the tables relevant to the user's question (or al
 3. **For each table**, gather per-column stats:
    - Cardinality, null rate, min/max for numeric/temporal
    - Anomalies: >50% null, single-value columns, suspicious distributions
+   - PII detection: flag columns whose names or sample values suggest personally identifiable information (e.g., `email`, `phone`, `ssn`, `address`, `ip_address`, full names). Check both column names and a sample of values.
    - Use `execute_sql_query` MCP tool, `.to_ibis()` with group_by/aggregate, or raw SQL via `dataset(...)`.
 4. **For 1–2 tables**, profile inline. For 3+ tables, profile in parallel using haiku subagents (one per table, all spawned in the same message).
 
@@ -85,7 +86,8 @@ IMPORTANT: Relation has no .count() method. For row counts use either:
 For per-column stats, use .to_ibis() with group_by/aggregate or raw SQL.
 
 Return: row count, per-column cardinality, null rate, min/max for numeric/temporal,
-any anomalies (>50% null, single-value, suspicious distributions).
+any anomalies (>50% null, single-value, suspicious distributions),
+and any columns likely containing PII (emails, phone numbers, names, addresses, IPs, etc.).
 No prose — structured output only.
 ```
 
@@ -96,6 +98,7 @@ After profiling, the following must be established:
 - **Schema excerpt**: tables involved, key columns, foreign keys, parent/child edges
 - **Summary stats**: row counts, cardinality, null rates, temporal ranges
 - **Anomaly flags**: anything surprising in the data
+- **PII flags**: columns that likely contain personally identifiable information (names, emails, phone numbers, addresses, SSNs, IP addresses, etc.). Flag these explicitly so the user can decide whether to exclude or anonymize them before visualization.
 - **User context**: any constraints or focus areas they mentioned
 - **Cap state**: whether the 1,000-row development cap is active (default: yes)
 
