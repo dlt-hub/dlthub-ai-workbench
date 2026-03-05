@@ -27,3 +27,4 @@ Raw source data → dlt pipeline(s) → create-transformation → Canonical data
 
 - **rest-api-pipeline** — ingest data from REST APIs before transforming
 - **data-exploration** — explore transformed data with marimo notebooks
+
