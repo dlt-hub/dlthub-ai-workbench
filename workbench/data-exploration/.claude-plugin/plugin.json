@@ -7,7 +7,7 @@
   },
   "homepage": "https://dlthub.com/docs",
   "repository": "https://github.com/dlt-hub/dlthub-ai-workbench",
-  "license": "Apache-2.0",
+  "license": "https://github.com/dlt-hub/dlthub-ai-workbench/blob/master/LICENSE",
   "keywords": ["dlt", "marimo", "ibis", "data-exploration", "dashboards", "altair"],
   "mcpServers": {
     "dlt-workspace": {
