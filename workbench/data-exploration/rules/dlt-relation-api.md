@@ -31,11 +31,9 @@ dataset = pipeline.dataset()
 dataset.row_counts().df()
 ```
 
-This is the fallback after `dlt.attach(...)` fails or is not applicable.
-
 ## Chainable query methods
 
-All methods return a new `Relation` (immutable chaining — the original is unchanged):
+All methods return a new `Relation` (immutable chaining):
 
 ```python
 # Select columns
@@ -45,19 +43,13 @@ table.select("id", "name", "amount")
 table.where("status", "eq", "active")
 table.where("amount", "gt", 100)
 table.where("id", "in", [1, 2, 3])
-table.where("region", "not_in", ["EU"])
 # Operators: eq, ne, gt, lt, gte, lte, in, not_in
 
 # Limit and ordering
 table.limit(100)
 table.head()                             # limit(5) by default
-table.head(20)
 table.order_by("created_at")            # ascending by default
 table.order_by("amount", "desc")
-
-# Aggregation (requires exactly one column selected first)
-table.select("amount").max()
-table.select("amount").min()
 
 # Chain them together
 table.select("id", "amount").where("amount", "gt", 100).order_by("amount", "desc").limit(10)
@@ -72,19 +64,6 @@ table.df()                     # -> pandas DataFrame (or None if empty)
 table.arrow()                  # -> PyArrow Table (or None if empty)
 table.fetchall()               # -> list[tuple[...]]
 table.fetchone()               # -> tuple[...] | None (first row)
-table.fetchscalar()            # -> single value (first col of first row)
-```
-
-`fetchscalar()` raises `ValueError` if more than one row or column is returned.
-
-Chunked iteration for large tables:
-```python
-for chunk in table.iter_df(chunk_size=1000):
-    process(chunk)             # each chunk is a pandas DataFrame
-for chunk in table.iter_arrow(chunk_size=1000):
-    process(chunk)             # each chunk is a PyArrow Table
-for chunk in table.iter_fetch(chunk_size=1000):
-    process(chunk)             # each chunk is list[tuple[...]]
 ```
 
 ## Row counts and schema inspection
@@ -95,11 +74,9 @@ table.columns                      # list of column names
 table.columns_schema               # dlt column schema dict
 ```
 
-## What Relation does NOT have
+## Relation limitations
 
-- **No `join()`** — use `to_ibis()` or raw SQL
-- **No `count()`** — use raw SQL: `dataset("SELECT COUNT(*) FROM my_table").fetchscalar()`
-- **No `group_by()`** — use `to_ibis()` for aggregations beyond min/max
+No `join()`, `count()`, or `group_by()` — use `to_ibis()` or raw SQL for these.
 
 ## Escalating to ibis
 
@@ -116,12 +93,7 @@ expr = (
 dataset(expr).df()  # execute ibis expression back through the dataset
 ```
 
-Key ibis operations:
-- `t.group_by("col").aggregate(total=t.col.sum())` — aggregation
-- `t.filter(t.col > 0)` — filtering
-- `t.join(other, t.id == other.parent_id)` — joins
-- `t.order_by(ibis.desc("col"))` — sorting
-- `t.mutate(new_col=t.col * 100)` — computed columns
+Key ibis operations: `group_by/aggregate`, `filter`, `join`, `order_by(ibis.desc(...))`, `mutate`.
 
 Ibis docs: https://ibis-project.org/reference/expression-collections
 
@@ -139,4 +111,3 @@ joined = parent.join(child, parent._dlt_id == child._dlt_parent_id)
 ```python
 dataset("SELECT * FROM orders WHERE amount > 100").df()
 ```
-
